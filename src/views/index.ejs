@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContentAI - 关键词搜索应用</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --primary-color: #0d6efd;
+      --secondary-color: #6c757d;
+      --success-color: #198754;
+      --nav-active-bg: rgba(13, 110, 253, 0.1);
+      --transition-speed: 0.3s;
+    }
+    
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* 侧边栏样式 */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+      transition: width var(--transition-speed) ease;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+    }
+    
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
+    }
+    
+    .sidebar-header {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .sidebar-brand {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .sidebar-toggle {
+      background: none;
+      border: none;
+      color: var(--secondary-color);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    
+    .sidebar-menu {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0;
+    }
+    
+    .nav-item {
+      margin: 0.25rem 0;
+    }
+    
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      color: var(--secondary-color);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border-radius: 0.25rem;
+      margin: 0 0.5rem;
+    }
+    
+    .nav-link:hover {
+      background-color: rgba(108, 117, 125, 0.1);
+      color: var(--primary-color);
+    }
+    
+    .nav-link.active {
+      background-color: var(--nav-active-bg);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+    
+    .nav-icon {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+      min-width: 1.25rem;
+      text-align: center;
+    }
+    
+    .sidebar.collapsed .nav-text {
+      display: none;
+    }
+    
+    .sidebar.collapsed .sidebar-brand {
+      display: none;
+    }
+    
+    .sidebar-footer {
+      padding: 1rem;
+      border-top: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--secondary-color);
+    }
+    
+    /* 主内容区域样式 */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      transition: margin-left var(--transition-speed) ease;
+      width: calc(100% - var(--sidebar-width));
+      min-height: 100vh;
+    }
+    
+    .sidebar.collapsed + .main-content {
+      margin-left: var(--sidebar-collapsed-width);
+      width: calc(100% - var(--sidebar-collapsed-width));
+    }
+    
+    .content-header {
+      padding: 1rem;
+      background-color: #fff;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .content-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .content-body {
+      padding: 1.5rem;
+      min-height: calc(100vh - 70px);
+    }
+    
+    /* 搜索模块样式 */
+    .search-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .search-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .search-form {
+      margin-bottom: 2rem;
+    }
+    
+    .search-params {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .search-results {
+      margin-top: 2rem;
+    }
+    
+    .result-card {
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .result-card:hover {
+      transform: translateY(-3px);
+    }
+    
+    /* 响应式样式 */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 0;
+        overflow: hidden;
+      }
+      
+      .sidebar.mobile-show {
+        width: var(--sidebar-width);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+      }
+      
+      .mobile-sidebar-toggle {
+        display: block;
+      }
+      
+      .search-params .col-md-6 {
+        margin-bottom: 0.5rem;
+      }
+      
+      .search-params .d-flex {
+        flex-wrap: nowrap;
+      }
+    }
+    
+    /* 通用工具类 */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边导航栏 -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-brand">ContentAI</a>
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+      </div>
+      <div class="sidebar-menu">
+        <ul class="nav flex-column" id="main-nav">
+          <!-- 导航项将通过JS动态加载 -->
+        </ul>
+      </div>
+      <div class="sidebar-footer" id="sidebar-footer">
+        © 2025 版权所有
+      </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div class="main-content" id="main-content">
+      <div class="content-header">
+        <button class="btn d-md-none mobile-sidebar-toggle" id="mobile-sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </button>
+        <h1 class="content-title" id="content-title">内容标题</h1>
+        <div class="header-actions" id="header-actions">
+          <!-- 动态加载的操作按钮 -->
+        </div>
+      </div>
+      
+      <div class="content-body" id="content-body">
+        <!-- 模块内容将根据选择的导航项动态加载 -->
+        <div id="module-container"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 模块模板 -->
+  <template id="search-module-template">
+    <div class="search-container">
+      <div class="search-header">
+        <h2>ContentAI 关键词搜索</h2>
+        <p class="text-muted">输入关键词，快速获取相关新闻信息</p>
+      </div>
+      
+      <div class="search-form">
+        <form id="search-form" action="/search" method="GET">
+          <div class="input-group">
+            <input type="text" class="form-control form-control-lg" name="keywords" id="keywords" placeholder="安徽 合肥" required>
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-search me-1"></i> 搜索
+            </button>
+          </div>
+          <small class="text-muted">支持多个关键词，用逗号分隔，支持"AND"、"OR"语法</small>
+          
+          <div class="search-params mt-3">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                  <label for="size" class="form-label me-2 mb-0" style="flex: 0 0 auto; min-width: 90px;">每页结果数</label>
+                  <select class="form-select" name="size" id="size">
+                    <option value="10" selected>10</option>
+                    <option value="5">5</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                  <label for="sort" class="form-label me-2 mb-0" style="flex: 0 0 auto; min-width: 90px;">排序方式</label>
+                  <select class="form-select" name="sort" id="sort">
+                    <option value="time_desc" selected>时间降序（新→旧）</option>
+                    <option value="time_asc">时间升序（旧→新）</option>
+                    <option value="relevance">相关性降序</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="search-results text-center">
+        <p>在上方输入关键词开始搜索</p>
+        <i class="bi bi-search" style="font-size: 3rem; color: #dee2e6;"></i>
+      </div>
+    </div>
+  </template>
+  
+  <!-- 管理模块模板 -->
+  <template id="admin-module-template">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h2>管理面板</h2>
+        <p class="text-muted">管理系统配置和设置</p>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-3 mb-4">
+          <div class="list-group admin-nav" id="admin-nav">
+            <a href="#" class="list-group-item list-group-item-action active" data-target="api-config">
+              <i class="bi bi-hdd-network me-2"></i> API配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="search-config">
+              <i class="bi bi-search me-2"></i> 搜索配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="ui-config">
+              <i class="bi bi-palette me-2"></i> UI配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="cache-config">
+              <i class="bi bi-speedometer2 me-2"></i> 缓存配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="performance-config">
+              <i class="bi bi-graph-up me-2"></i> 性能配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="feedback-config">
+              <i class="bi bi-chat-dots me-2"></i> 用户反馈配置
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="config-history">
+              <i class="bi bi-clock-history me-2"></i> 配置历史
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" data-target="import-export">
+              <i class="bi bi-arrow-left-right me-2"></i> 导入导出
+            </a>
+          </div>
+        </div>
+        
+        <div class="col-md-9">
+          <div class="card">
+            <div class="card-header" id="admin-config-title">
+              API配置
+            </div>
+            <div class="card-body" id="admin-config-content">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3">加载配置中...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 模块定义
+    const modules = [
+      {
+        id: 'search',
+        name: '搜索测试',
+        icon: 'bi-search',
+        template: '#search-module-template',
+        default: true
+      },
+      {
+        id: 'admin',
+        name: '管理面板',
+        icon: 'bi-gear',
+        template: '#admin-module-template',
+        requiresAuth: true
+      }
+      // 可在此添加更多模块
+    ];
+    
+    // 应用状态
+    const appState = {
+      currentModule: null,
+      sidebarCollapsed: false,
+      isAuthenticated: <%= locals.isAuthenticated ? 'true' : 'false' %>,
+    };
+    
+    // 初始化应用
+    function initApp() {
+      // 渲染导航
+      renderNavigation();
+      
+      // 初始化侧边栏切换
+      initSidebarToggle();
+      
+      // 初始化模块路由
+      initModuleRouting();
+      
+      // 加载默认模块
+      loadDefaultModule();
+    }
+    
+    // 渲染导航菜单
+    function renderNavigation() {
+      const navContainer = document.getElementById('main-nav');
+      navContainer.innerHTML = '';
+      
+      modules.forEach(module => {
+        // 如果模块需要认证但用户未登录，则不显示
+        if (module.requiresAuth && !appState.isAuthenticated) {
+          return;
+        }
+        
+        const navItem = document.createElement('li');
+        navItem.className = 'nav-item';
+        
+        const navLink = document.createElement('a');
+        navLink.href = `#${module.id}`;
+        navLink.className = 'nav-link';
+        navLink.dataset.moduleId = module.id;
+        
+        const icon = document.createElement('i');
+        icon.className = `bi ${module.icon} nav-icon`;
+        
+        const text = document.createElement('span');
+        text.className = 'nav-text';
+        text.textContent = module.name;
+        
+        navLink.appendChild(icon);
+        navLink.appendChild(text);
+        navItem.appendChild(navLink);
+        navContainer.appendChild(navItem);
+      });
+    }
+    
+    // 初始化侧边栏切换
+    function initSidebarToggle() {
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        
+        // 更新切换按钮图标
+        const icon = sidebarToggle.querySelector('i');
+        if (sidebar.classList.contains('collapsed')) {
+          icon.className = 'bi bi-chevron-right';
+          appState.sidebarCollapsed = true;
+        } else {
+          icon.className = 'bi bi-chevron-left';
+          appState.sidebarCollapsed = false;
+        }
+        
+        // 保存侧边栏状态到本地存储
+        localStorage.setItem('sidebar-collapsed', appState.sidebarCollapsed);
+      });
+      
+      // 恢复侧边栏状态
+      const savedState = localStorage.getItem('sidebar-collapsed');
+      if (savedState === 'true') {
+        sidebar.classList.add('collapsed');
+        sidebarToggle.querySelector('i').className = 'bi bi-chevron-right';
+        appState.sidebarCollapsed = true;
+      }
+      
+      // 移动端侧边栏切换
+      const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
+      if (mobileSidebarToggle) {
+        mobileSidebarToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('mobile-show');
+        });
+      }
+    }
+    
+    // 初始化模块路由
+    function initModuleRouting() {
+      // 监听导航链接点击
+      document.querySelectorAll('.nav-link[data-module-id]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          const moduleId = link.dataset.moduleId;
+          loadModule(moduleId);
+          
+          // 更新URL哈希但不触发hashchange事件
+          history.pushState(null, null, `#${moduleId}`);
+          
+          // 在移动设备上点击导航链接后关闭侧边栏
+          if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('mobile-show');
+          }
+        });
+      });
+      
+      // 监听URL哈希变化
+      window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          loadModule(hash);
+        } else {
+          loadDefaultModule();
+        }
+      });
+    }
+    
+    // 加载默认模块
+    function loadDefaultModule() {
+      const hash = window.location.hash.substring(1);
+      
+      if (hash) {
+        loadModule(hash);
+      } else {
+        // 查找默认模块
+        const defaultModule = modules.find(m => m.default);
+        if (defaultModule) {
+          loadModule(defaultModule.id);
+          history.replaceState(null, null, `#${defaultModule.id}`);
+        }
+      }
+    }
+    
+    // 加载模块内容
+    function loadModule(moduleId) {
+      // 查找模块定义
+      const module = modules.find(m => m.id === moduleId);
+      
+      if (!module) {
+        console.error(`模块不存在: ${moduleId}`);
+        return;
+      }
+      
+      // 如果模块需要认证但用户未登录
+      if (module.requiresAuth && !appState.isAuthenticated) {
+        redirectToLogin();
+        return;
+      }
+      
+      // 更新当前模块
+      appState.currentModule = module;
+      
+      // 更新导航项激活状态
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.dataset.moduleId === moduleId) {
+          link.classList.add('active');
+        }
+      });
+      
+      // 更新页面标题
+      document.getElementById('content-title').textContent = module.name;
+      
+      // 加载模块内容
+      const container = document.getElementById('module-container');
+      const template = document.querySelector(module.template);
+      
+      if (template) {
+        container.innerHTML = '';
+        container.appendChild(document.importNode(template.content, true));
+        
+        // 初始化模块特定功能
+        initModuleSpecific(module);
+      } else {
+        container.innerHTML = `<div class="alert alert-danger">模块模板不存在: ${module.template}</div>`;
+      }
+    }
+    
+    // 初始化模块特定功能
+    function initModuleSpecific(module) {
+      switch(module.id) {
+        case 'search':
+          initSearchModule();
+          break;
+        case 'admin':
+          initAdminModule();
+          break;
+        // 其他模块的初始化...
+      }
+    }
+    
+    // 初始化搜索模块
+    function initSearchModule() {
+      // 绑定搜索表单提交事件
+      const searchForm = document.getElementById('search-form');
+      if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const keywords = document.getElementById('keywords').value.trim();
+          const size = document.getElementById('size').value;
+          const sort = document.getElementById('sort').value;
+          
+          if (!keywords) {
+            alert('请输入搜索关键词');
+            return;
+          }
+          
+          // 跳转到搜索结果页
+          window.location.href = `/search?keywords=${encodeURIComponent(keywords)}&size=${size}&sort=${sort}`;
+        });
+      }
+    }
+    
+    // 初始化管理模块
+    function initAdminModule() {
+      // 绑定管理导航点击事件
+      const adminNav = document.getElementById('admin-nav');
+      if (adminNav) {
+        adminNav.querySelectorAll('.list-group-item').forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 更新活动状态
+            adminNav.querySelectorAll('.list-group-item').forEach(el => {
+              el.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // 获取目标配置
+            const target = this.dataset.target;
+            
+            // 更新标题
+            document.getElementById('admin-config-title').textContent = this.textContent.trim();
+            
+            // 根据目标加载不同的配置内容
+            loadAdminContent(target);
+          });
+        });
+        
+        // 默认加载第一个配置选项
+        loadAdminContent('api-config');
+      }
+    }
+    
+    // 加载管理内容
+    function loadAdminContent(target) {
+      const contentContainer = document.getElementById('admin-config-content');
+      
+      // 显示加载状态
+      contentContainer.innerHTML = `
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-3">加载${getConfigTitle(target)}中...</p>
+        </div>
+      `;
+      
+      // 发送AJAX请求获取配置内容
+      $.ajax({
+        url: `/admin/config/${target}`,
+        method: 'GET',
+        success: function(response) {
+          if (response.success) {
+            renderConfigForm(contentContainer, target, response.data);
+          } else {
+            contentContainer.innerHTML = `
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                加载配置失败: ${response.message || '未知错误'}
+              </div>
+            `;
+          }
+        },
+        error: function(xhr, status, error) {
+          contentContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              加载配置失败: ${xhr.responseJSON?.message || error || '未知错误'}
+            </div>
+          `;
+        }
+      });
+    }
+    
+    // 渲染配置表单
+    function renderConfigForm(container, target, data) {
+      // 生成一个基本的表单模板
+      const formHtml = `
+        <form id="${target}-form">
+          <div id="${target}-fields"></div>
+          
+          <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i> 保存设置
+            </button>
+            <button type="button" class="btn btn-outline-secondary reset-config">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> 重置为默认值
+            </button>
+          </div>
+        </form>
+      `;
+      
+      container.innerHTML = formHtml;
+      
+      // 获取字段容器
+      const fieldsContainer = document.getElementById(`${target}-fields`);
+      
+      // 根据配置数据生成表单字段
+      if (data && typeof data === 'object') {
+        Object.entries(data).forEach(([key, config]) => {
+          const fieldHtml = createConfigField(key, config);
+          fieldsContainer.innerHTML += fieldHtml;
+        });
+      } else {
+        fieldsContainer.innerHTML = `
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            无可用配置项
+          </div>
+        `;
+      }
+      
+      // 绑定表单事件
+      bindConfigFormEvents(target);
+    }
+    
+    // 创建配置字段
+    function createConfigField(key, config) {
+      let fieldHtml = '';
+      
+      // 根据配置类型生成不同的表单控件
+      switch (config.type) {
+        case 'boolean':
+          fieldHtml = `
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="${key}" name="${key}" ${config.value ? 'checked' : ''}>
+              <label class="form-check-label" for="${key}">${config.label || key}</label>
+              ${config.description ? `<div class="form-text">${config.description}</div>` : ''}
+            </div>
+          `;
+          break;
+          
+        case 'select':
+          let options = '';
+          if (config.options && Array.isArray(config.options)) {
+            config.options.forEach(option => {
+              if (typeof option === 'object') {
+                options += `<option value="${option.value}" ${option.value === config.value ? 'selected' : ''}>${option.label}</option>`;
+              } else {
+                options += `<option value="${option}" ${option === config.value ? 'selected' : ''}>${option}</option>`;
+              }
+            });
+          }
+          
+          fieldHtml = `
+            <div class="mb-3">
+              <label for="${key}" class="form-label">${config.label || key}</label>
+              <select class="form-select" id="${key}" name="${key}">
+                ${options}
+              </select>
+              ${config.description ? `<div class="form-text">${config.description}</div>` : ''}
+            </div>
+          `;
+          break;
+          
+        case 'number':
+          fieldHtml = `
+            <div class="mb-3">
+              <label for="${key}" class="form-label">${config.label || key}</label>
+              <input type="number" class="form-control" id="${key}" name="${key}" value="${config.value}" 
+                ${config.min !== undefined ? `min="${config.min}"` : ''} 
+                ${config.max !== undefined ? `max="${config.max}"` : ''} 
+                ${config.step !== undefined ? `step="${config.step}"` : ''}>
+              ${config.description ? `<div class="form-text">${config.description}</div>` : ''}
+            </div>
+          `;
+          break;
+          
+        default: // text类型和其他类型
+          fieldHtml = `
+            <div class="mb-3">
+              <label for="${key}" class="form-label">${config.label || key}</label>
+              <input type="text" class="form-control" id="${key}" name="${key}" value="${config.value || ''}">
+              ${config.description ? `<div class="form-text">${config.description}</div>` : ''}
+            </div>
+          `;
+      }
+      
+      return fieldHtml;
+    }
+    
+    // 绑定配置表单事件
+    function bindConfigFormEvents(target) {
+      const form = document.getElementById(`${target}-form`);
+      if (form) {
+        // 表单提交事件
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          // 收集表单数据
+          const formData = {};
+          
+          // 处理不同类型的表单元素
+          form.querySelectorAll('input, select, textarea').forEach(element => {
+            if (element.type === 'checkbox') {
+              formData[element.name] = element.checked;
+            } else if (element.type === 'number') {
+              formData[element.name] = parseFloat(element.value);
+            } else {
+              formData[element.name] = element.value;
+            }
+          });
+          
+          // 发送AJAX请求保存配置
+          $.ajax({
+            url: `/admin/config/${target}`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+              if (response.success) {
+                // 显示成功消息
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success mt-3';
+                alert.innerHTML = `<i class="bi bi-check-circle me-2"></i> 配置已成功保存`;
+                form.appendChild(alert);
+                
+                // 3秒后自动隐藏消息
+                setTimeout(() => {
+                  alert.remove();
+                }, 3000);
+              } else {
+                // 显示错误消息
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger mt-3';
+                alert.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> 保存配置失败: ${response.message || '未知错误'}`;
+                form.appendChild(alert);
+              }
+            },
+            error: function(xhr, status, error) {
+              // 显示错误消息
+              const alert = document.createElement('div');
+              alert.className = 'alert alert-danger mt-3';
+              alert.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> 保存配置失败: ${xhr.responseJSON?.message || error || '未知错误'}`;
+              form.appendChild(alert);
+            }
+          });
+        });
+        
+        // 重置按钮点击事件
+        const resetBtn = form.querySelector('.reset-config');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            if (confirm('确定要重置所有配置为默认值吗？')) {
+              // 发送AJAX请求重置配置
+              $.ajax({
+                url: `/admin/config/${target}/reset`,
+                method: 'POST',
+                success: function(response) {
+                  if (response.success) {
+                    // 重新加载配置
+                    loadAdminContent(target);
+                  } else {
+                    // 显示错误消息
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-danger mt-3';
+                    alert.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> 重置配置失败: ${response.message || '未知错误'}`;
+                    form.appendChild(alert);
+                  }
+                },
+                error: function(xhr, status, error) {
+                  // 显示错误消息
+                  const alert = document.createElement('div');
+                  alert.className = 'alert alert-danger mt-3';
+                  alert.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> 重置配置失败: ${xhr.responseJSON?.message || error || '未知错误'}`;
+                  form.appendChild(alert);
+                }
+              });
+            }
+          });
+        }
+      }
+    }
+    
+    // 获取配置标题
+    function getConfigTitle(target) {
+      const titles = {
+        'api-config': 'API配置',
+        'search-config': '搜索配置',
+        'ui-config': 'UI配置',
+        'cache-config': '缓存配置',
+        'performance-config': '性能配置',
+        'feedback-config': '用户反馈配置',
+        'config-history': '配置历史',
+        'import-export': '导入导出'
+      };
+      
+      return titles[target] || '配置';
+    }
+    
+    // 跳转到登录页面
+    function redirectToLogin() {
+      window.location.href = '/admin/login?redirect=' + encodeURIComponent(window.location.href);
+    }
+    
+    // 文档加载完成后初始化应用
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html> 

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>搜索结果 - ContentAI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --primary-color: #0d6efd;
+      --secondary-color: #6c757d;
+      --success-color: #198754;
+      --nav-active-bg: rgba(13, 110, 253, 0.1);
+      --transition-speed: 0.3s;
+    }
+    
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* 侧边栏样式 */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+      transition: width var(--transition-speed) ease;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+    }
+    
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed-width);
+    }
+    
+    .sidebar-header {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .sidebar-brand {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .sidebar-toggle {
+      background: none;
+      border: none;
+      color: var(--secondary-color);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    
+    .sidebar-menu {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0;
+    }
+    
+    .nav-item {
+      margin: 0.25rem 0;
+    }
+    
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      color: var(--secondary-color);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border-radius: 0.25rem;
+      margin: 0 0.5rem;
+    }
+    
+    .nav-link:hover {
+      background-color: rgba(108, 117, 125, 0.1);
+      color: var(--primary-color);
+    }
+    
+    .nav-link.active {
+      background-color: var(--nav-active-bg);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+    
+    .nav-icon {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+      min-width: 1.25rem;
+      text-align: center;
+    }
+    
+    .sidebar.collapsed .nav-text {
+      display: none;
+    }
+    
+    .sidebar.collapsed .sidebar-brand {
+      display: none;
+    }
+    
+    .sidebar-footer {
+      padding: 1rem;
+      border-top: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--secondary-color);
+    }
+    
+    /* 主内容区域样式 */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      transition: margin-left var(--transition-speed) ease;
+      width: calc(100% - var(--sidebar-width));
+      min-height: 100vh;
+    }
+    
+    .sidebar.collapsed + .main-content {
+      margin-left: var(--sidebar-collapsed-width);
+      width: calc(100% - var(--sidebar-collapsed-width));
+    }
+    
+    .content-header {
+      padding: 1rem;
+      background-color: #fff;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .content-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .content-body {
+      padding: 1.5rem;
+      min-height: calc(100vh - 70px);
+    }
+    
+    /* 搜索结果样式 */
+    .search-form {
+      margin-bottom: 1.5rem;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    
+    .search-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      color: var(--secondary-color);
+    }
+    
+    .result-count {
+      font-weight: 500;
+    }
+    
+    .result-card {
+      margin-bottom: 1.5rem;
+      transition: transform 0.2s ease;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .result-card:hover {
+      transform: translateY(-3px);
+    }
+    
+    .result-title {
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .result-date {
+      font-size: 0.875rem;
+      color: var(--secondary-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .result-content {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    
+    .highlight {
+      background-color: #ffeeba;
+      padding: 0.15rem 0.25rem;
+      border-radius: 0.25rem;
+    }
+    
+    .pagination-container {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    
+    /* 模态框样式 */
+    .modal-content-scroll {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    
+    /* 搜索表单样式 */
+    .search-form {
+      margin-bottom: 1.5rem;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    
+    .filter-controls .input-group {
+      width: 100%;
+    }
+    
+    .filter-controls .form-select {
+      flex: 1;
+    }
+    
+    .filter-controls .input-group-text {
+      min-width: 90px;
+      background-color: #e9ecef;
+      color: #495057;
+      font-weight: 500;
+    }
+    
+    /* 响应式样式 */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 0;
+        overflow: hidden;
+      }
+      
+      .sidebar.mobile-show {
+        width: var(--sidebar-width);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+      }
+      
+      .mobile-sidebar-toggle {
+        display: block;
+      }
+      
+      .search-meta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .search-meta > div {
+        margin-bottom: 0.5rem;
+        width: 100%;
+      }
+      
+      .row.filter-controls {
+        margin: 0 -5px;
+        width: 100%;
+      }
+      
+      .filter-controls .col-md-6 {
+        padding: 0 5px;
+        margin-bottom: 10px;
+      }
+      
+      .input-group-text {
+        width: 90px;
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 侧边导航栏 -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-brand">ContentAI</a>
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+      </div>
+      <div class="sidebar-menu">
+        <ul class="nav flex-column" id="main-nav">
+          <li class="nav-item">
+            <a href="/" class="nav-link active">
+              <i class="bi bi-search nav-icon"></i>
+              <span class="nav-text">搜索测试</span>
+            </a>
+          </li>
+          <% if (locals.isAuthenticated) { %>
+          <li class="nav-item">
+            <a href="/#admin" class="nav-link">
+              <i class="bi bi-gear nav-icon"></i>
+              <span class="nav-text">管理面板</span>
+            </a>
+          </li>
+          <% } %>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        © 2025 版权所有
+      </div>
+    </div>
+    
+    <!-- 主内容区域 -->
+    <div class="main-content" id="main-content">
+      <div class="content-header">
+        <button class="btn d-md-none mobile-sidebar-toggle" id="mobile-sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </button>
+        <h1 class="content-title">搜索结果</h1>
+        <div class="header-actions">
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-dev-mode">
+            <i class="bi bi-code-slash"></i> 开发者模式
+          </button>
+        </div>
+      </div>
+      
+      <div class="content-body">
+        <div class="search-container">
+          <!-- 搜索表单 -->
+          <div class="search-form">
+            <form id="search-form" action="/search" method="GET">
+              <div class="input-group">
+                <input type="text" class="form-control" name="keywords" id="keywords" value="<%= keywords %>" required>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-search me-1"></i> 搜索
+                </button>
+              </div>
+              
+              <div class="row filter-controls mt-3">
+                <div class="col-md-6 mb-2 mb-md-0">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">每页结果数</span>
+                    <select class="form-select" name="size" id="size">
+                      <option value="5" <%= size == 5 ? 'selected' : '' %>>5</option>
+                      <option value="10" <%= size == 10 ? 'selected' : '' %>>10</option>
+                      <option value="20" <%= size == 20 ? 'selected' : '' %>>20</option>
+                      <option value="50" <%= size == 50 ? 'selected' : '' %>>50</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">排序方式</span>
+                    <select class="form-select" name="sort" id="sort">
+                      <option value="time_desc" <%= sort == 'time_desc' ? 'selected' : '' %>>时间降序（新→旧）</option>
+                      <option value="time_asc" <%= sort == 'time_asc' ? 'selected' : '' %>>时间升序（旧→新）</option>
+                      <option value="relevance" <%= sort == 'relevance' ? 'selected' : '' %>>相关性降序</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          
+          <!-- 搜索结果元信息 -->
+          <div class="search-meta">
+            <div class="result-count">
+              <% if (loading) { %>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span>搜索中...</span>
+              <% } else if (error) { %>
+                <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> 搜索错误：<%= error %></span>
+              <% } else { %>
+                找到 <strong><%= totalElements %></strong> 条结果（第 <%= page %> 页，共 <%= totalPages %> 页）
+              <% } %>
+            </div>
+            
+            <div class="view-mode">
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" id="card-view-btn">
+                  <i class="bi bi-card-text"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="list-view-btn">
+                  <i class="bi bi-list-ul"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 搜索结果列表 -->
+          <div id="search-results">
+            <% if (loading) { %>
+              <!-- 加载状态 -->
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3">正在搜索，请稍候...</p>
+              </div>
+            <% } else if (error) { %>
+              <!-- 错误状态 -->
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                搜索时出错：<%= error %>
+              </div>
+            <% } else if (content && content.length > 0) { %>
+              <!-- 搜索结果 -->
+              <div class="result-list card-view">
+                <% content.forEach(function(item, index) { %>
+                  <div class="card result-card">
+                    <div class="card-body">
+                      <h5 class="card-title result-title"><%= item.name %></h5>
+                      <p class="result-date">
+                        <i class="bi bi-calendar"></i> <%= formatDate(item.created) %>
+                      </p>
+                      <div class="result-content">
+                        <%= truncateContent(item.content, 200) %>
+                        <% if (item.content.length > 200) { %>
+                          <span class="text-muted">...</span>
+                        <% } %>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-primary view-full-content" data-index="<%= index %>">
+                        <i class="bi bi-eye me-1"></i> 查看完整内容
+                      </button>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+              
+              <!-- 分页控件 -->
+              <div class="pagination-container">
+                <nav aria-label="搜索结果分页">
+                  <ul class="pagination">
+                    <!-- 上一页 -->
+                    <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                      <a class="page-link" href="/search?keywords=<%= encodeURIComponent(keywords) %>&page=<%= page-1 %>&size=<%= size %>&sort=<%= sort %>" aria-label="上一页">
+                        <span aria-hidden="true">&laquo;</span>
+                      </a>
+                    </li>
+                    
+                    <!-- 页码链接 -->
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                      <% if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) { %>
+                        <li class="page-item <%= i === page ? 'active' : '' %>">
+                          <a class="page-link" href="/search?keywords=<%= encodeURIComponent(keywords) %>&page=<%= i %>&size=<%= size %>&sort=<%= sort %>"><%= i %></a>
+                        </li>
+                      <% } else if (i === page - 3 || i === page + 3) { %>
+                        <li class="page-item disabled">
+                          <span class="page-link">...</span>
+                        </li>
+                      <% } %>
+                    <% } %>
+                    
+                    <!-- 下一页 -->
+                    <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                      <a class="page-link" href="/search?keywords=<%= encodeURIComponent(keywords) %>&page=<%= page+1 %>&size=<%= size %>&sort=<%= sort %>" aria-label="下一页">
+                        <span aria-hidden="true">&raquo;</span>
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            <% } else { %>
+              <!-- 无结果 -->
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                没有找到符合条件的搜索结果，请尝试修改关键词或搜索条件。
+              </div>
+            <% } %>
+          </div>
+          
+          <!-- 开发者模式：原始 JSON 数据 -->
+          <div id="dev-mode-panel" class="mt-4 d-none">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">原始 JSON 响应</h5>
+              </div>
+              <div class="card-body">
+                <pre class="bg-light p-3 rounded"><code id="raw-json"><%= JSON.stringify(responseData, null, 2) %></code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 内容查看模态框 -->
+  <div class="modal fade" id="contentModal" tabindex="-1" aria-labelledby="contentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="contentModalLabel">内容详情</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body modal-content-scroll">
+          <h5 id="modal-title"></h5>
+          <p class="text-muted" id="modal-date"></p>
+          <div id="modal-content"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 初始化页面
+    $(document).ready(function() {
+      // 侧边栏切换
+      initSidebar();
+      
+      // 视图模式切换
+      initViewMode();
+      
+      // 完整内容查看
+      initContentViewer();
+      
+      // 开发者模式切换
+      initDevMode();
+    });
+    
+    // 初始化侧边栏
+    function initSidebar() {
+      const sidebarToggle = $('#sidebar-toggle');
+      const sidebar = $('#sidebar');
+      
+      // 侧边栏切换按钮点击事件
+      sidebarToggle.on('click', function() {
+        sidebar.toggleClass('collapsed');
+        
+        // 更新切换按钮图标
+        const icon = sidebarToggle.find('i');
+        if (sidebar.hasClass('collapsed')) {
+          icon.removeClass('bi-chevron-left').addClass('bi-chevron-right');
+          localStorage.setItem('sidebar-collapsed', 'true');
+        } else {
+          icon.removeClass('bi-chevron-right').addClass('bi-chevron-left');
+          localStorage.setItem('sidebar-collapsed', 'false');
+        }
+      });
+      
+      // 恢复侧边栏状态
+      const savedState = localStorage.getItem('sidebar-collapsed');
+      if (savedState === 'true') {
+        sidebar.addClass('collapsed');
+        sidebarToggle.find('i').removeClass('bi-chevron-left').addClass('bi-chevron-right');
+      }
+      
+      // 移动端侧边栏切换
+      $('#mobile-sidebar-toggle').on('click', function() {
+        sidebar.toggleClass('mobile-show');
+      });
+    }
+    
+    // 初始化视图模式
+    function initViewMode() {
+      const cardViewBtn = $('#card-view-btn');
+      const listViewBtn = $('#list-view-btn');
+      const resultList = $('.result-list');
+      
+      // 卡片视图按钮点击事件
+      cardViewBtn.on('click', function() {
+        resultList.removeClass('list-view').addClass('card-view');
+        cardViewBtn.addClass('active');
+        listViewBtn.removeClass('active');
+        localStorage.setItem('view-mode', 'card');
+      });
+      
+      // 列表视图按钮点击事件
+      listViewBtn.on('click', function() {
+        resultList.removeClass('card-view').addClass('list-view');
+        listViewBtn.addClass('active');
+        cardViewBtn.removeClass('active');
+        localStorage.setItem('view-mode', 'list');
+      });
+      
+      // 恢复视图模式
+      const savedMode = localStorage.getItem('view-mode');
+      if (savedMode === 'list') {
+        listViewBtn.trigger('click');
+      }
+    }
+    
+    // 初始化内容查看器
+    function initContentViewer() {
+      const contentModal = new bootstrap.Modal(document.getElementById('contentModal'));
+      
+      // 查看完整内容按钮点击事件
+      $('.view-full-content').on('click', function() {
+        const index = $(this).data('index');
+        const content = <%- JSON.stringify(content || []) %>;
+        
+        if (content[index]) {
+          const item = content[index];
+          
+          // 填充模态框内容
+          $('#modal-title').text(item.name);
+          $('#modal-date').html('<i class="bi bi-calendar"></i> ' + formatDate(item.created));
+          $('#modal-content').html(item.content);
+          
+          // 显示模态框
+          contentModal.show();
+        }
+      });
+    }
+    
+    // 初始化开发者模式
+    function initDevMode() {
+      const toggleDevModeBtn = $('#toggle-dev-mode');
+      const devModePanel = $('#dev-mode-panel');
+      
+      // 开发者模式按钮点击事件
+      toggleDevModeBtn.on('click', function() {
+        devModePanel.toggleClass('d-none');
+        
+        if (!devModePanel.hasClass('d-none')) {
+          // 美化 JSON 显示
+          const rawJson = $('#raw-json').text();
+          try {
+            const formattedJson = JSON.stringify(JSON.parse(rawJson), null, 2);
+            $('#raw-json').text(formattedJson);
+          } catch (e) {
+            console.error('JSON 格式化失败:', e);
+          }
+        }
+      });
+    }
+    
+    // 格式化日期
+    function formatDate(dateString) {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (e) {
+        return dateString;
+      }
+    }
+  </script>
+</body>
+</html> 
