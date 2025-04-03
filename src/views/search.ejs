@@ -166,8 +166,9 @@
     .search-form {
       margin-bottom: 1.5rem;
       background-color: #f8f9fa;
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
     .search-meta {
@@ -183,30 +184,32 @@
       font-weight: 500;
     }
     
+    .result-list {
+      margin-top: 1.5rem;
+    }
+    
+    /* 结果卡片样式 */
     .result-card {
-      margin-bottom: 1.5rem;
-      transition: transform 0.2s ease;
+      margin-bottom: 1rem;
+      border-radius: 4px;
       border-left: 4px solid var(--primary-color);
     }
     
-    .result-card:hover {
-      transform: translateY(-3px);
-    }
-    
     .result-title {
-      color: var(--primary-color);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--bs-primary);
     }
     
     .result-date {
-      font-size: 0.875rem;
-      color: var(--secondary-color);
-      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 1rem;
     }
     
     .result-content {
-      margin-bottom: 1rem;
-      line-height: 1.6;
+      color: #212529;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
     }
     
     .highlight {
@@ -215,10 +218,19 @@
       border-radius: 0.25rem;
     }
     
-    .pagination-container {
+    .pagination {
       margin-top: 2rem;
-      display: flex;
+      margin-bottom: 2rem;
       justify-content: center;
+    }
+    
+    .pagination .page-item.active .page-link {
+      background-color: var(--bs-primary);
+      border-color: var(--bs-primary);
+    }
+    
+    .pagination .page-link {
+      color: var(--bs-primary);
     }
     
     /* 模态框样式 */
@@ -231,23 +243,81 @@
     .search-form {
       margin-bottom: 1.5rem;
       background-color: #f8f9fa;
-      padding: 1rem;
+      padding: 1.5rem;
       border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .filter-controls {
+      margin-top: 1rem;
+      background-color: #f0f4f8;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #e3e8ed;
     }
     
     .filter-controls .input-group {
       width: 100%;
+      margin-bottom: 0.5rem;
     }
     
     .filter-controls .form-select {
       flex: 1;
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding-right: 30px;
     }
     
     .filter-controls .input-group-text {
-      min-width: 90px;
+      min-width: 120px;
       background-color: #e9ecef;
       color: #495057;
       font-weight: 500;
+      justify-content: flex-start;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+    
+    /* 专门为排序方式增加宽度 */
+    .filter-controls .sort-select {
+      min-width: 160px;
+    }
+    
+    .filter-controls .form-select option {
+      padding: 8px;
+    }
+    
+    /* 自定义下拉菜单样式 */
+    .custom-select-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .custom-select-wrapper select {
+      width: 100%;
+      padding-right: 30px;
+      text-overflow: ellipsis;
+    }
+    
+    /* 完整的选项文本显示 */
+    .form-select-lg {
+      height: auto;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    
+    .filter-controls-header {
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #495057;
+      display: flex;
+      align-items: center;
+    }
+    
+    .filter-controls-header i {
+      margin-right: 5px;
+      color: #0d6efd;
     }
     
     /* 响应式样式 */
@@ -276,23 +346,101 @@
       }
       
       .search-meta > div {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
         width: 100%;
       }
       
+      .filter-controls {
+        padding: 10px;
+      }
+      
       .row.filter-controls {
-        margin: 0 -5px;
+        margin: 0;
         width: 100%;
       }
       
       .filter-controls .col-md-6 {
+        padding: 0;
+        margin-bottom: 15px;
+      }
+      
+      .filter-controls .input-group-text {
+        width: 110px;
+        font-size: 0.9rem;
+      }
+      
+      .filter-controls .form-select {
+        font-size: 0.9rem;
+      }
+      
+      /* 确保搜索框在移动设备上适当展示 */
+      .input-group-lg > .form-control {
+        font-size: 1rem;
+      }
+      
+      .input-group-lg > .btn {
+        font-size: 1rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      
+      .col-md-6 .input-group {
+        width: 100%;
+      }
+      
+      #sort {
+        width: 100%;
+      }
+    }
+    
+    /* 优化排序下拉菜单 */
+    #sort, #size {
+      min-width: 100px;
+      width: auto;
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: ellipsis;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px 12px;
+    }
+    
+    /* 自定义下拉菜单选项 */
+    #sort option, #size option {
+      white-space: normal;
+      padding: 5px;
+    }
+    
+    /* 增强响应式布局 */
+    @media (max-width: 576px) {
+      .filter-controls {
+        padding: 12px 10px;
+      }
+      
+      .filter-controls .row {
+        margin: 0 -5px;
+      }
+      
+      .filter-controls .col-sm-6 {
         padding: 0 5px;
         margin-bottom: 10px;
       }
       
-      .input-group-text {
-        width: 90px;
-        justify-content: flex-start;
+      .filter-controls .input-group-text {
+        font-size: 0.85rem;
+        min-width: 90px;
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+      
+      .filter-controls .form-select {
+        font-size: 0.85rem;
+        padding-left: 8px;
+        padding-right: 24px;
       }
     }
   </style>
@@ -349,34 +497,54 @@
           <!-- 搜索表单 -->
           <div class="search-form">
             <form id="search-form" action="/search" method="GET">
-              <div class="input-group">
-                <input type="text" class="form-control" name="keywords" id="keywords" value="<%= keywords %>" required>
-                <button type="submit" class="btn btn-primary">
-                  <i class="bi bi-search me-1"></i> 搜索
+              <div class="input-group input-group-lg mb-3">
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="bi bi-search text-primary"></i>
+                </span>
+                <input type="text" 
+                       class="form-control border-start-0" 
+                       name="keywords" 
+                       id="keywords" 
+                       value="<%= keywords %>" 
+                       placeholder="输入关键词进行搜索..." 
+                       required>
+                <button type="submit" class="btn btn-primary px-4">
+                  搜索
                 </button>
               </div>
               
-              <div class="row filter-controls mt-3">
-                <div class="col-md-6 mb-2 mb-md-0">
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text">每页结果数</span>
-                    <select class="form-select" name="size" id="size">
-                      <option value="5" <%= size == 5 ? 'selected' : '' %>>5</option>
-                      <option value="10" <%= size == 10 ? 'selected' : '' %>>10</option>
-                      <option value="20" <%= size == 20 ? 'selected' : '' %>>20</option>
-                      <option value="50" <%= size == 50 ? 'selected' : '' %>>50</option>
-                    </select>
-                  </div>
+              <div class="row filter-controls">
+                <div class="filter-controls-header">
+                  <i class="bi bi-funnel"></i> 搜索过滤选项
                 </div>
-                
-                <div class="col-md-6">
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text">排序方式</span>
-                    <select class="form-select" name="sort" id="sort">
-                      <option value="time_desc" <%= sort == 'time_desc' ? 'selected' : '' %>>时间降序（新→旧）</option>
-                      <option value="time_asc" <%= sort == 'time_asc' ? 'selected' : '' %>>时间升序（旧→新）</option>
-                      <option value="relevance" <%= sort == 'relevance' ? 'selected' : '' %>>相关性降序</option>
-                    </select>
+                <div class="row g-2">
+                  <div class="col-sm-6">
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-list-ol me-1"></i>
+                        每页结果数
+                      </span>
+                      <select class="form-select" name="size" id="size" aria-label="每页显示结果数量">
+                        <option value="5" <%= size == 5 ? 'selected' : '' %>>5条</option>
+                        <option value="10" <%= size == 10 ? 'selected' : '' %>>10条</option>
+                        <option value="20" <%= size == 20 ? 'selected' : '' %>>20条</option>
+                        <option value="50" <%= size == 50 ? 'selected' : '' %>>50条</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="col-sm-6">
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-sort-down me-1"></i>
+                        排序方式
+                      </span>
+                      <select class="form-select" name="sort" id="sort" aria-label="结果排序方式">
+                        <option value="time_desc" <%= sort == 'time_desc' ? 'selected' : '' %>>时间降序</option>
+                        <option value="time_asc" <%= sort == 'time_asc' ? 'selected' : '' %>>时间升序</option>
+                        <option value="relevance" <%= sort == 'relevance' ? 'selected' : '' %>>相关性</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -384,28 +552,35 @@
           </div>
           
           <!-- 搜索结果元信息 -->
-          <div class="search-meta">
+          <div class="search-meta d-flex align-items-center justify-content-between mb-4 p-2 bg-light rounded">
             <div class="result-count">
               <% if (loading) { %>
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                <span>搜索中...</span>
+                <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                <span class="ms-2">搜索中...</span>
               <% } else if (error) { %>
-                <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> 搜索错误：<%= error %></span>
-              <% } else { %>
-                找到 <strong><%= totalElements %></strong> 条结果（第 <%= page %> 页，共 <%= totalPages %> 页）
+                <span class="text-danger">
+                  <i class="bi bi-exclamation-triangle me-1"></i> 
+                  搜索错误：<%= error %>
+                </span>
+              <% } else if (content && content.length > 0) { %>
+                <span class="d-flex align-items-center">
+                  <i class="bi bi-file-text me-2 text-primary"></i>
+                  找到 <strong class="mx-1"><%= totalElements %></strong> 条结果
+                  <span class="ms-2 text-muted small">
+                    (第 <%= page %> 页，共 <%= totalPages %> 页)
+                  </span>
+                </span>
+              <% } else if (keywords) { %>
+                <span class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  未找到相关结果
+                </span>
               <% } %>
             </div>
             
-            <div class="view-mode">
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-outline-secondary active" id="card-view-btn">
-                  <i class="bi bi-card-text"></i>
-                </button>
-                <button type="button" class="btn btn-outline-secondary" id="list-view-btn">
-                  <i class="bi bi-list-ul"></i>
-                </button>
-              </div>
-            </div>
+            <% if (content && content.length > 0) { %>
+              <!-- 视图切换按钮已移除 -->
+            <% } %>
           </div>
           
           <!-- 搜索结果列表 -->
@@ -424,7 +599,7 @@
               </div>
             <% } else if (content && content.length > 0) { %>
               <!-- 搜索结果 -->
-              <div class="result-list card-view">
+              <div class="result-list">
                 <% content.forEach(function(item, index) { %>
                   <div class="card result-card">
                     <div class="card-body">
@@ -532,14 +707,14 @@
       // 侧边栏切换
       initSidebar();
       
-      // 视图模式切换
-      initViewMode();
-      
       // 完整内容查看
       initContentViewer();
       
       // 开发者模式切换
       initDevMode();
+      
+      // 初始化过滤器控件
+      initFilterControls();
     });
     
     // 初始化侧边栏
@@ -573,35 +748,6 @@
       $('#mobile-sidebar-toggle').on('click', function() {
         sidebar.toggleClass('mobile-show');
       });
-    }
-    
-    // 初始化视图模式
-    function initViewMode() {
-      const cardViewBtn = $('#card-view-btn');
-      const listViewBtn = $('#list-view-btn');
-      const resultList = $('.result-list');
-      
-      // 卡片视图按钮点击事件
-      cardViewBtn.on('click', function() {
-        resultList.removeClass('list-view').addClass('card-view');
-        cardViewBtn.addClass('active');
-        listViewBtn.removeClass('active');
-        localStorage.setItem('view-mode', 'card');
-      });
-      
-      // 列表视图按钮点击事件
-      listViewBtn.on('click', function() {
-        resultList.removeClass('card-view').addClass('list-view');
-        listViewBtn.addClass('active');
-        cardViewBtn.removeClass('active');
-        localStorage.setItem('view-mode', 'list');
-      });
-      
-      // 恢复视图模式
-      const savedMode = localStorage.getItem('view-mode');
-      if (savedMode === 'list') {
-        listViewBtn.trigger('click');
-      }
     }
     
     // 初始化内容查看器
@@ -646,6 +792,21 @@
             console.error('JSON 格式化失败:', e);
           }
         }
+      });
+    }
+    
+    // 初始化过滤器控件
+    function initFilterControls() {
+      // 监听下拉菜单变化，自动提交表单
+      $('#size, #sort').on('change', function() {
+        $('#search-form').submit();
+      });
+      
+      // 添加下拉菜单的鼠标悬停效果
+      $('.form-select').on('mouseover', function() {
+        $(this).addClass('border-primary');
+      }).on('mouseout', function() {
+        $(this).removeClass('border-primary');
       });
     }
     
