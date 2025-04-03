@@ -6,6 +6,8 @@
 
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
+const config = require('../config/index'); // 导入配置模块
 
 // 配置文件路径
 const CONFIG_FILE = path.join(process.cwd(), 'config.json');
@@ -71,53 +73,79 @@ exports.getConfigByType = async (req, res) => {
 };
 
 /**
- * 保存特定类型的配置
- * 
- * @param {Object} req - Express请求对象
- * @param {Object} res - Express响应对象
- * @returns {void}
+ * 根据类型保存配置
+ * @param {object} req - 请求对象
+ * @param {object} res - 响应对象
  */
-exports.saveConfigByType = async (req, res) => {
+async function saveConfigByType(req, res) {
   try {
     const { type } = req.params;
-    const newConfigData = req.body;
+    console.log(`保存配置类型: ${type}，请求数据:`, req.body);
     
-    // 加载当前配置
-    const config = await loadConfig();
-    
-    // 检查配置类型是否存在
-    if (!config[type]) {
-      return res.status(404).json({
+    // 验证请求体不为空
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.error('保存配置失败: 请求体为空');
+      return res.status(400).json({
         success: false,
-        message: `找不到配置类型: ${type}`
+        message: '无效的请求数据'
       });
     }
     
-    // 备份当前配置
-    await backupConfig(config, 'update', type);
+    // 根据类型保存配置
+    let dataToSave = req.body;
     
-    // 更新配置
-    config[type] = {
-      ...config[type],
-      ...newConfigData
-    };
+    // 处理可能存在的api特殊对象结构
+    if (type === 'api' && req.body.api) {
+      dataToSave = req.body.api;
+    }
     
-    // 保存配置
-    await saveConfig(config);
+    console.log(`准备保存${type}配置:`, dataToSave);
     
-    res.json({
-      success: true,
-      message: `保存${type}配置成功`,
-      data: config[type]
-    });
+    try {
+      // 仅保存单个键值对，适配前端表单提交格式
+      if (dataToSave.key && dataToSave.value) {
+        const key = dataToSave.key;
+        const value = dataToSave.value;
+        console.log(`保存单个配置: ${key} = ${value}`);
+        
+        // 检查key是否包含.分隔符以确定是否为路径
+        if (key.includes('.')) {
+          // 根据路径设置嵌套属性
+          await config.set(key, value);
+        } else {
+          // 直接设置配置
+          const configObj = {};
+          configObj[key] = value;
+          await config.set(type, configObj);
+        }
+      } else {
+        // 保存整个配置对象
+        await config.set(type, dataToSave);
+      }
+      
+      // 返回成功响应
+      return res.status(200).json({
+        success: true,
+        message: `配置保存成功: ${type}`
+      });
+    } catch (configError) {
+      console.error(`配置模块错误:`, configError);
+      return res.status(500).json({
+        success: false,
+        message: `配置模块错误: ${configError.message}`
+      });
+    }
   } catch (error) {
-    console.error(`保存${req.params.type}配置失败:`, error);
-    res.status(500).json({
+    console.error(`保存${req.params.type}配置出错:`, error);
+    return res.status(500).json({
       success: false,
-      message: `保存配置失败: ${error.message}`
+      message: `配置保存失败: ${error.message}`
     });
   }
-};
+}
+
+// 导出saveConfigByType
+exports.saveConfigByType = saveConfigByType;
 
 /**
  * 重置特定类型的配置为默认值
@@ -510,5 +538,42 @@ async function backupConfig(config, action = 'update', configType = 'all') {
   } catch (error) {
     console.error('备份配置失败:', error);
     // 备份失败不应阻止主要操作，所以这里只记录错误但不抛出
+  }
+}
+
+/**
+ * 保存配置历史记录
+ * @param {String} configType - 配置类型
+ * @param {Object} configData - 配置数据
+ * @param {String} description - 描述
+ * @param {String} modifier - 修改者
+ * @returns {String} 历史记录ID
+ * @private
+ */
+function saveConfigHistory(configType, configData, description, modifier) {
+  try {
+    // 生成唯一ID
+    const timestamp = new Date().toISOString();
+    const hash = crypto.createHash('md5').update(timestamp + Math.random().toString()).digest('hex').substring(0, 8);
+    const id = `${timestamp.replace(/[:.]/g, '-')}_${hash}`;
+    
+    // 创建历史记录对象
+    const historyRecord = {
+      timestamp: timestamp,
+      configType: configType,
+      content: configData,
+      modifier: modifier,
+      description: description
+    };
+    
+    // 保存到文件
+    const historyFilePath = path.join(CONFIG_HISTORY_DIR, `${id}.json`);
+    fs.writeFileSync(historyFilePath, JSON.stringify(historyRecord, null, 2), 'utf8');
+    
+    console.log(`配置历史记录已保存: ${id}`);
+    return id;
+  } catch (error) {
+    console.error('保存配置历史记录失败:', error);
+    throw error;
   }
 } 
