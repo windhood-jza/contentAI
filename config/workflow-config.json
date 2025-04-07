@@ -9,5 +9,16 @@
     "parameters": {},
     "matchPatterns": [],
     "enabled": true
+  },
+  {
+    "id": "0fa2716c-de91-433d-bad7-46d39fe9091b",
+    "system": "ocean",
+    "name": "索贝运维工作流",
+    "description": "",
+    "version": "1.0",
+    "priority": 10,
+    "parameters": {},
+    "matchPatterns": [],
+    "enabled": true
   }
 ]

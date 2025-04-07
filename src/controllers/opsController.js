@@ -340,6 +340,13 @@ const saveOpsConfig = async (req, res) => {
           message: `配置 "${config.name}" 缺少必填字段: accessToken 和 apiBaseUrl 为必填项`
         });
       }
+      
+      if (!config.defaultWorkflow) {
+        return res.status(400).json({
+          success: false,
+          message: `配置 "${config.name}" 缺少必填字段: defaultWorkflow 为必填项`
+        });
+      }
     }
     
     // 确保至少有一个默认配置
@@ -370,7 +377,7 @@ const saveOpsConfig = async (req, res) => {
  */
 const testConnection = async (req, res) => {
   try {
-    const { accessToken, apiBaseUrl } = req.body;
+    const { accessToken, apiBaseUrl, defaultWorkflow } = req.body;
     
     if (!accessToken || !apiBaseUrl) {
       return res.status(400).json({
@@ -379,9 +386,12 @@ const testConnection = async (req, res) => {
       });
     }
     
+    // 如果提供了默认工作流ID，则使用该ID；否则使用测试ID
+    const workflowId = defaultWorkflow || 'test';
+    
     // 构造一个简单的测试请求
     const testPayload = {
-      workflow_id: 'test',
+      workflow_id: workflowId,
       inputs: {
         message: '这是一个测试消息'
       }
@@ -419,7 +429,8 @@ const testConnection = async (req, res) => {
       // 测试成功
       res.json({
         success: true,
-        message: '连接成功: API响应正常'
+        message: '连接成功: API响应正常',
+        workflowId: workflowId
       });
     } catch (error) {
       if (error.code === 'ECONNREFUSED') {
