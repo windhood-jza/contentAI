@@ -1480,35 +1480,51 @@
           // 显示"对方正在输入"的动画
           const typingIndicator = appendTypingIndicator();
           
-          // 调用API获取回答
-          setTimeout(() => {
-            // 这里只是模拟API调用，实际项目中需要替换为真正的API请求
-            // TODO: 实现实际的API调用
-            const mockResponse = {
-              success: true,
-              data: {
-                content: `这是一个模拟回答，当您选择了"${currentSystem === 'dayang' ? '大洋系统' : '索贝系统'}"。\n\n实际项目中，这里将显示从API获取的真实回答。\n\n您的问题是：${question}`
-              }
-            };
-            
+          // 调用后端API，使用运维助手配置中指定的默认工作流
+          fetch('/api/ops/workflow', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: question,
+              system: currentSystem
+              // 注意：不传递workflowId，后端会使用配置中的默认工作流
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP错误：${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
             // 移除"正在输入"的动画
             removeTypingIndicator(typingIndicator);
             
-            if (mockResponse.success) {
+            if (data.success) {
               // 显示回答
-              appendMessage('assistant', mockResponse.data.content);
+              appendMessage('assistant', data.data.content);
               
               // 保存对话记录
-              saveChatHistory(currentChatId, question, mockResponse.data.content, currentSystem);
+              saveChatHistory(currentChatId, question, data.data.content, currentSystem);
               
               // 更新历史记录列表和计数
               loadChatHistory();
               updateHistoryCount();
             } else {
               // 显示错误信息
-              appendMessage('error', '获取回答时出错，请稍后再试');
+              appendMessage('error', data.message || '获取回答时出错，请稍后再试');
             }
-          }, 1500);
+          })
+          .catch(error => {
+            // 移除"正在输入"的动画
+            removeTypingIndicator(typingIndicator);
+            
+            // 显示错误信息
+            appendMessage('error', `调用工作流出错：${error.message}`);
+            console.error('工作流调用错误:', error);
+          });
         });
       }
       

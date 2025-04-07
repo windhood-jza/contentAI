@@ -117,18 +117,18 @@
                 </div>
               </div>
               
-              <div class="mb-3">
-                <label for="defaultWorkflow" class="form-label">默认使用的工作流 <span class="text-danger">*</span></label>
-                <select class="form-select" id="defaultWorkflow" required>
-                  <option value="">-- 请选择工作流 --</option>
-                  <!-- 工作流选项将通过JS动态加载 -->
-                </select>
-                <div class="form-text">选择此配置默认使用的工作流，工作流可在工作流配置页面添加</div>
-              </div>
-              
               <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="enableMarkdown" checked>
                 <label class="form-check-label" for="enableMarkdown">启用Markdown格式显示</label>
+              </div>
+              
+              <div class="mb-3">
+                <label for="defaultWorkflowId" class="form-label">默认工作流 <span class="text-danger">*</span></label>
+                <select class="form-select" id="defaultWorkflowId" required>
+                  <option value="">-- 请选择默认工作流 --</option>
+                  <!-- 工作流选项将通过JavaScript动态加载 -->
+                </select>
+                <div class="form-text">当没有匹配到特定工作流时使用的默认工作流</div>
               </div>
               
               <div class="form-check form-switch mb-3">
@@ -154,9 +154,11 @@
       // 全局变量
       let configs = [];
       let currentConfigId = null;
+      let workflows = []; // 存储所有工作流配置
       
       // 初始加载
       loadAllConfigs();
+      loadWorkflows(); // 加载工作流配置
       
       // 切换Access Token显示/隐藏
       $('#toggleAccessToken').on('click', function() {
@@ -294,11 +296,9 @@
         $('#recordRetention').val(config.recordRetention || 7);
         $('#defaultSystem').val(config.defaultSystem || 'ocean');
         $('#promptText').val(config.promptText || '请输入您的运维问题...');
-        $('#defaultWorkflow').val(config.defaultWorkflow || '');
+        $('#defaultWorkflowId').val(config.defaultWorkflowId || '');
         $('#enableMarkdown').prop('checked', config.enableMarkdown !== false);
         $('#isDefault').prop('checked', config.isDefault === true);
-        
-        loadWorkflows();
       }
       
       // 从表单获取配置
@@ -312,7 +312,7 @@
           recordRetention: parseInt($('#recordRetention').val()) || 7,
           defaultSystem: $('#defaultSystem').val(),
           promptText: $('#promptText').val(),
-          defaultWorkflow: $('#defaultWorkflow').val(),
+          defaultWorkflowId: $('#defaultWorkflowId').val(),
           enableMarkdown: $('#enableMarkdown').is(':checked'),
           isDefault: $('#isDefault').is(':checked')
         };
@@ -323,11 +323,6 @@
         // 验证必填字段
         if (!$('#configName').val() || !$('#accessToken').val() || !$('#apiBaseUrl').val()) {
           showFormMessage('请填写所有必填字段', 'danger');
-          return;
-        }
-        
-        if (!$('#defaultWorkflow').val()) {
-          showFormMessage('请选择默认工作流', 'danger');
           return;
         }
         
@@ -425,6 +420,7 @@
       function resetForm() {
         $('#configForm').trigger('reset');
         $('#configId').val('');
+        $('#connectionResult').empty();
         currentConfigId = null;
       }
       
@@ -440,49 +436,70 @@
         $('#saveConfig, #deleteConfig').prop('disabled', true);
       }
       
-      // 加载工作流列表用于选择
+      // 加载工作流配置
       function loadWorkflows() {
         $.ajax({
           url: '/admin/workflow-config',
           method: 'GET',
           success: function(response) {
             if (response.success && response.data) {
-              const workflows = response.data;
-              const $select = $('#defaultWorkflow');
-              
-              // 保存当前选中值
-              const currentValue = $select.val();
-              
-              // 清空并重新填充选项
-              $select.empty();
-              $select.append('<option value="">-- 请选择工作流 --</option>');
-              
-              workflows.forEach(workflow => {
-                if (workflow.enabled !== false) {
-                  const systemName = getSystemName(workflow.system);
-                  $select.append(`<option value="${workflow.id}">${workflow.name} (${systemName})</option>`);
-                }
-              });
-              
-              // 恢复选中状态
-              if (currentValue) {
-                $select.val(currentValue);
-              }
+              workflows = response.data;
+              updateWorkflowDropdown();
+            } else {
+              console.error('加载工作流配置失败:', response.message || '未知错误');
             }
           },
           error: function(xhr) {
-            console.error('加载工作流列表失败:', xhr.responseJSON?.message || '服务器错误');
+            console.error('加载工作流配置失败:', xhr.responseJSON?.message || '服务器错误');
           }
         });
       }
       
-      // 获取系统名称
-      function getSystemName(system) {
-        switch (system) {
-          case 'ocean': return '大洋系统';
-          case 'sobey': return '索贝系统';
-          case 'common': return '通用';
-          default: return system;
+      // 更新工作流下拉列表
+      function updateWorkflowDropdown() {
+        const $select = $('#defaultWorkflowId');
+        const currentValue = $select.val();
+        
+        $select.empty();
+        $select.append('<option value="">-- 请选择默认工作流 --</option>');
+        
+        if (workflows.length > 0) {
+          // 按系统分组
+          const oceanWorkflows = workflows.filter(w => w.system === 'ocean');
+          const sobeyWorkflows = workflows.filter(w => w.system === 'sobey');
+          const commonWorkflows = workflows.filter(w => w.system === 'common');
+          
+          // 添加大洋系统工作流
+          if (oceanWorkflows.length > 0) {
+            const oceanGroup = $('<optgroup label="大洋系统"></optgroup>');
+            oceanWorkflows.forEach(workflow => {
+              oceanGroup.append(`<option value="${workflow.id}">${workflow.name}</option>`);
+            });
+            $select.append(oceanGroup);
+          }
+          
+          // 添加索贝系统工作流
+          if (sobeyWorkflows.length > 0) {
+            const sobeyGroup = $('<optgroup label="索贝系统"></optgroup>');
+            sobeyWorkflows.forEach(workflow => {
+              sobeyGroup.append(`<option value="${workflow.id}">${workflow.name}</option>`);
+            });
+            $select.append(sobeyGroup);
+          }
+          
+          // 添加通用工作流
+          if (commonWorkflows.length > 0) {
+            const commonGroup = $('<optgroup label="通用"></optgroup>');
+            commonWorkflows.forEach(workflow => {
+              commonGroup.append(`<option value="${workflow.id}">${workflow.name}</option>`);
+            });
+            $select.append(commonGroup);
+          }
+        }
+        
+        // 恢复之前选中的值
+        if (currentValue) {
+          $select.val(currentValue);
         }
       }
     });

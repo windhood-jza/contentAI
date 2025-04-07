@@ -340,13 +340,6 @@ const saveOpsConfig = async (req, res) => {
           message: `配置 "${config.name}" 缺少必填字段: accessToken 和 apiBaseUrl 为必填项`
         });
       }
-      
-      if (!config.defaultWorkflow) {
-        return res.status(400).json({
-          success: false,
-          message: `配置 "${config.name}" 缺少必填字段: defaultWorkflow 为必填项`
-        });
-      }
     }
     
     // 确保至少有一个默认配置
@@ -377,7 +370,7 @@ const saveOpsConfig = async (req, res) => {
  */
 const testConnection = async (req, res) => {
   try {
-    const { accessToken, apiBaseUrl, defaultWorkflow } = req.body;
+    const { accessToken, apiBaseUrl } = req.body;
     
     if (!accessToken || !apiBaseUrl) {
       return res.status(400).json({
@@ -386,12 +379,9 @@ const testConnection = async (req, res) => {
       });
     }
     
-    // 如果提供了默认工作流ID，则使用该ID；否则使用测试ID
-    const workflowId = defaultWorkflow || 'test';
-    
     // 构造一个简单的测试请求
     const testPayload = {
-      workflow_id: workflowId,
+      workflow_id: 'test',
       inputs: {
         message: '这是一个测试消息'
       }
@@ -429,8 +419,7 @@ const testConnection = async (req, res) => {
       // 测试成功
       res.json({
         success: true,
-        message: '连接成功: API响应正常',
-        workflowId: workflowId
+        message: '连接成功: API响应正常'
       });
     } catch (error) {
       if (error.code === 'ECONNREFUSED') {
@@ -473,15 +462,44 @@ const getAllWorkflows = async (req, res) => {
     let workflows = [];
     
     try {
+      // 直接读取UTF-8文件
       const data = await fsPromises.readFile(WORKFLOW_CONFIG_PATH, 'utf8');
-      workflows = JSON.parse(data);
-      if (!Array.isArray(workflows)) {
-        workflows = [];
-        logger.warn('工作流配置文件格式不正确，已重置为空数组');
+      
+      try {
+        workflows = JSON.parse(data);
+        if (!Array.isArray(workflows)) {
+          logger.warn('工作流配置文件格式不正确，已重置为空数组');
+          workflows = [];
+        } else {
+          logger.info(`成功读取了 ${workflows.length} 个工作流配置`);
+          
+          // 检查编码是否正确
+          const nameString = workflows.map(w => w.name).join(',');
+          if (/[\u0080-\uFFFF]/.test(nameString)) {
+            logger.info(`读取到包含Unicode字符的工作流名称: ${nameString}`);
+          }
+        }
+      } catch (parseError) {
+        logger.error(`工作流配置文件JSON解析失败: ${parseError.message}`);
+        // 尝试处理UTF-8 BOM问题
+        if (data.charCodeAt(0) === 0xFEFF) {
+          logger.info('检测到UTF-8 BOM标记，尝试去除后解析');
+          try {
+            workflows = JSON.parse(data.slice(1));
+            if (!Array.isArray(workflows)) {
+              workflows = [];
+            }
+          } catch (e) {
+            logger.error(`去除BOM后解析仍然失败: ${e.message}`);
+            workflows = [];
+          }
+        } else {
+          workflows = [];
+        }
       }
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        logger.error('读取工作流配置文件失败:', error);
+        logger.error(`读取工作流配置文件失败: ${error.message}`);
       } else {
         // 配置文件不存在，创建默认空数组
         await fsPromises.writeFile(WORKFLOW_CONFIG_PATH, JSON.stringify(workflows, null, 2), 'utf8');
@@ -489,12 +507,18 @@ const getAllWorkflows = async (req, res) => {
       }
     }
     
+    // 检查编码问题
+    workflows.forEach((workflow, index) => {
+      // 将可能存在编码问题的名称打印出来，以便诊断
+      logger.info(`工作流[${index}] ID:${workflow.id}, 名称:${workflow.name}`);
+    });
+    
     res.json({
       success: true,
       data: workflows
     });
   } catch (error) {
-    logger.error('获取工作流配置失败:', error);
+    logger.error(`获取工作流配置失败: ${error.message}`);
     res.status(500).json({
       success: false,
       message: `获取工作流配置失败: ${error.message}`
@@ -529,10 +553,46 @@ const saveAllWorkflows = async (req, res) => {
           message: `工作流 "${workflow.name || '未命名'}" 配置无效: 必须包含id, name和system字段`
         });
       }
+      
+      // 验证parameters结构
+      if (workflow.parameters) {
+        if (typeof workflow.parameters !== 'object' || Array.isArray(workflow.parameters)) {
+          return res.status(400).json({
+            success: false,
+            message: `工作流 "${workflow.name}" 的parameters必须是对象格式`
+          });
+        }
+      }
     }
     
-    // 保存配置到文件
-    await fsPromises.writeFile(WORKFLOW_CONFIG_PATH, JSON.stringify(workflows, null, 2), 'utf8');
+    // 直接使用字符串方式，避免编码问题
+    const jsonContent = JSON.stringify(workflows, null, 2);
+    
+    try {
+      // 直接写入UTF-8文件，不使用Buffer转换
+      await fsPromises.writeFile(WORKFLOW_CONFIG_PATH, jsonContent, 'utf8');
+      
+      // 添加日志记录
+      logger.info(`工作流配置已保存到: ${WORKFLOW_CONFIG_PATH}，总共 ${workflows.length} 个工作流`);
+      
+      // 确认文件是否成功写入并且编码正确
+      const savedData = await fsPromises.readFile(WORKFLOW_CONFIG_PATH, 'utf8');
+      const savedWorkflows = JSON.parse(savedData);
+      logger.info(`配置文件校验成功，读取到 ${savedWorkflows.length} 个工作流配置`);
+      
+      // 对比原始数据和读取后的数据，确保没有丢失信息
+      const nameBeforeSave = workflows.map(w => w.name).join(',');
+      const nameAfterSave = savedWorkflows.map(w => w.name).join(',');
+      
+      if (nameBeforeSave !== nameAfterSave) {
+        logger.warn(`保存前后工作流名称不一致！保存前: ${nameBeforeSave}, 保存后: ${nameAfterSave}`);
+      } else {
+        logger.info('工作流名称保存前后一致，编码未发生问题');
+      }
+    } catch (writeError) {
+      logger.error(`保存工作流配置文件失败: ${writeError.message}`);
+      throw writeError;
+    }
     
     res.json({
       success: true,

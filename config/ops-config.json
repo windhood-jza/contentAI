@@ -8,6 +8,7 @@
     "recordRetention": 7,
     "defaultSystem": "ocean",
     "promptText": "请输入您的运维问题...",
+    "defaultWorkflowId": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
     "enableMarkdown": true,
     "isDefault": true
   },
@@ -20,6 +21,7 @@
     "recordRetention": 7,
     "defaultSystem": "ocean",
     "promptText": "请输入您的运维问题...",
+    "defaultWorkflowId": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
     "enableMarkdown": true,
     "isDefault": false
   }

@@ -7,6 +7,184 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/admin.css" rel="stylesheet">
+  <style>
+    .accordion-button:not(.collapsed) {
+      background-color: #f8f9fa;
+      color: #0d6efd;
+      box-shadow: none;
+    }
+    
+    /* 参数编辑器样式 */
+    .param-item {
+      transition: all 0.2s ease;
+      border-radius: 0.5rem;
+      position: relative;
+    }
+    
+    /* 参数卡片标题区美化 */
+    .param-item .card-body {
+      padding-top: 1rem !important;
+    }
+    
+    .param-item:after {
+      content: attr(data-key);
+      position: absolute;
+      top: -8px;
+      left: 10px;
+      background: white;
+      padding: 0 6px;
+      font-size: 10px;
+      border-radius: 8px;
+      color: #6c757d;
+      border: 1px solid #dee2e6;
+      z-index: 5;
+    }
+    
+    /* 对象和数组类型参数的特殊标记 */
+    .param-item[data-type="object"]:after {
+      background-color: #cff4fc;
+      color: #055160;
+      border-color: #b6effb;
+    }
+    
+    .param-item[data-type="array"]:after {
+      background-color: #e2e3e5;
+      color: #41464b;
+      border-color: #d3d6d8;
+    }
+    
+    .param-item:hover {
+      transform: translateY(-2px);
+    }
+    
+    .param-item .btn-group {
+      opacity: 0.6;
+      transition: opacity 0.2s ease;
+    }
+    
+    .param-item:hover .btn-group {
+      opacity: 1;
+    }
+    
+    .param-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .param-icon.text-primary {
+      background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .param-icon.text-success {
+      background-color: rgba(25, 135, 84, 0.1);
+    }
+    
+    .param-icon.text-warning {
+      background-color: rgba(255, 193, 7, 0.1);
+    }
+    
+    .param-icon.text-info {
+      background-color: rgba(13, 202, 240, 0.1);
+    }
+    
+    .param-icon.text-secondary {
+      background-color: rgba(108, 117, 125, 0.1);
+    }
+    
+    .child-params {
+      position: relative;
+      margin-left: 0.5rem;
+    }
+    
+    .child-params::before {
+      content: '';
+      position: absolute;
+      left: -1px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #dee2e6;
+      border-radius: 2px;
+    }
+    
+    /* 子参数的不同层级样式 */
+    .child-params .param-item {
+      border-left: 3px solid #f8f9fa;
+      position: relative;
+    }
+    
+    .child-params .param-item:before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      width: 9px;
+      height: 1px;
+      background-color: #dee2e6;
+    }
+    
+    .child-params .param-item[data-type="object"] {
+      border-left-color: rgba(13, 202, 240, 0.5);
+    }
+    
+    .child-params .param-item[data-type="array"] {
+      border-left-color: rgba(108, 117, 125, 0.5);
+    }
+    
+    /* 不同嵌套层级的样式 */
+    .child-params .child-params::before {
+      background-color: #6c757d;
+    }
+    
+    .child-params .child-params .child-params::before {
+      background-color: #0dcaf0;
+    }
+    
+    .child-params .child-params .child-params .child-params::before {
+      background-color: #0d6efd;
+    }
+    
+    .child-params .param-item:last-child {
+      margin-bottom: 0 !important;
+    }
+    
+    /* 美化空参数提示 */
+    .empty-params-placeholder {
+      padding: 2rem;
+      border-radius: 0.5rem;
+      background-color: #f8f9fa;
+      border: 1px dashed #dee2e6;
+    }
+    
+    /* JSON编辑器样式 */
+    #workflowParameters {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      background-color: #f8f9fa;
+    }
+    
+    /* 增加层级嵌套的标识 */
+    .child-params .param-item .param-icon:after {
+      content: attr(data-level);
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      font-size: 9px;
+      background: rgba(108, 117, 125, 0.2);
+      color: #6c757d;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
 </head>
 <body>
   <div class="container-fluid py-4">
@@ -154,12 +332,53 @@
             </div>
             
             <div class="mb-3">
-              <label for="workflowParameters" class="form-label">参数设置（JSON格式）</label>
-              <textarea class="form-control" id="workflowParameters" rows="5" placeholder='{
-  "maxTokens": 2000,
-  "temperature": 0.7
-}'></textarea>
-              <div class="form-text">可选，默认为空对象 {}</div>
+              <label for="workflowParameters" class="form-label">参数设置</label>
+              <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                  <div id="parameters-editor">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0"><i class="bi bi-gear-fill me-2 text-primary"></i>配置参数</h6>
+                      <button type="button" class="btn btn-sm btn-primary" id="add-param-btn">
+                        <i class="bi bi-plus-circle me-1"></i>添加顶级参数
+                      </button>
+                    </div>
+                    
+                    <div class="alert alert-info py-2 mb-3">
+                      <i class="bi bi-info-circle-fill me-2"></i>
+                      支持多级嵌套参数设置，可通过对象和数组类型参数的 <button class="btn btn-xs btn-success py-0 px-1" disabled><i class="bi bi-plus-circle-fill"></i></button> 按钮添加子参数
+                    </div>
+                    
+                    <div id="parameters-container" class="mb-3 mt-3">
+                      <!-- 参数项将在这里动态生成 -->
+                      <div class="text-center text-muted py-3 empty-params-placeholder">
+                        <i class="bi bi-list-nested fs-3 mb-2"></i>
+                        <p class="mb-1">暂无参数配置</p>
+                        <small>点击"添加参数"按钮开始配置</small>
+                      </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="show-json-toggle">
+                        <label class="form-check-label" for="show-json-toggle">显示JSON格式</label>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" id="json-format-btn">
+                        <i class="bi bi-code-slash me-1"></i>格式化JSON
+                      </button>
+                    </div>
+                    
+                    <div id="json-view" class="mt-3 d-none">
+                      <textarea class="form-control font-monospace" id="workflowParameters" rows="8" placeholder='{}'></textarea>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        参数编辑器会自动更新此JSON数据
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div class="mb-3">
@@ -247,6 +466,9 @@
       // 加载工作流配置
       loadWorkflows();
       
+      // 初始化参数编辑器
+      initParametersEditor();
+      
       // 添加工作流按钮
       $('#addWorkflow, #addFirstWorkflow').on('click', function() {
         resetWorkflowForm();
@@ -263,12 +485,25 @@
       
       // 保存单个工作流按钮
       $('#saveWorkflow').on('click', function() {
-        if (!validateWorkflowForm()) {
+        const form = document.getElementById('workflowForm');
+        if (!form.checkValidity()) {
+          form.reportValidity();
           return;
         }
         
+        // 获取表单数据
         const index = parseInt($('#workflowIndex').val());
-        const workflow = getWorkflowFromForm();
+        const workflow = {
+          id: $('#workflowId').val(),
+          name: $('#workflowName').val(),
+          system: $('#workflowSystem').val(),
+          description: $('#workflowDescription').val(),
+          version: $('#workflowVersion').val(),
+          priority: parseInt($('#workflowPriority').val()) || 10,
+          parameters: getParametersObject(), // 使用参数编辑器获取参数对象
+          matchPatterns: $('#workflowMatchPatterns').val().split('\n').filter(p => p.trim()),
+          enabled: $('#workflowEnabled').is(':checked')
+        };
         
         if (index === -1) {
           // 新增
@@ -329,6 +564,8 @@
               workflows = response.data;
               renderWorkflowList();
               updateTestWorkflowDropdown();
+              
+              console.log('工作流加载完成，数据:', workflows);
             } else {
               showError('加载工作流配置失败: ' + (response.message || '未知错误'));
               workflows = [];
@@ -380,9 +617,14 @@
                   <div class="small text-truncate" style="max-width: 70%;">
                     <span class="text-muted">ID: </span>${workflow.id}
                   </div>
-                  <button type="button" class="btn btn-sm btn-outline-primary edit-workflow" data-index="${index}">
-                    <i class="bi bi-pencil me-1"></i>编辑
-                  </button>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-workflow me-2" data-index="${index}">
+                      <i class="bi bi-trash me-1"></i>删除
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary edit-workflow" data-index="${index}">
+                      <i class="bi bi-pencil me-1"></i>编辑
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -395,6 +637,27 @@
           const index = $(this).data('index');
           editWorkflow(index);
         });
+        
+        // 删除按钮点击事件
+        $('.delete-workflow').on('click', function() {
+          const index = $(this).data('index');
+          deleteWorkflow(index);
+        });
+      }
+      
+      // 删除工作流
+      function deleteWorkflow(index) {
+        if (index < 0 || index >= workflows.length) {
+          return;
+        }
+        
+        const workflow = workflows[index];
+        
+        if (confirm(`确定要删除工作流 "${workflow.name}" 吗？此操作无法撤销。`)) {
+          workflows.splice(index, 1);
+          renderWorkflowList();
+          updateTestWorkflowDropdown();
+        }
       }
       
       // 更新测试工作流下拉框
@@ -425,9 +688,15 @@
         $('#workflowDescription').val(workflow.description || '');
         $('#workflowVersion').val(workflow.version || '1.0');
         $('#workflowPriority').val(workflow.priority || 10);
-        $('#workflowParameters').val(workflow.parameters ? JSON.stringify(workflow.parameters, null, 2) : '{}');
+        $('#workflowParameters').val(JSON.stringify(workflow.parameters, null, 2));
         $('#workflowMatchPatterns').val(Array.isArray(workflow.matchPatterns) ? workflow.matchPatterns.join('\n') : '');
         $('#workflowEnabled').prop('checked', workflow.enabled !== false);
+        
+        // 清空并重新加载参数编辑器
+        $('#parameters-container').empty();
+        if (workflow.parameters) {
+          fillParametersEditor(workflow.parameters);
+        }
         
         $('#workflowModalLabel').text('编辑工作流');
         $('#deleteWorkflow').removeClass('d-none');
@@ -581,7 +850,819 @@
         console.error(message);
         alert(message);
       }
+      
+      // 初始化参数编辑器
+      function initParametersEditor() {
+        // 初始化参数容器
+        const $container = $('#parameters-container');
+        
+        // 添加参数按钮事件
+        $('#add-param-btn').on('click', function() {
+          // 重置表单
+          $('#paramForm').trigger('reset');
+          $('#paramPath').val('');
+          $('#paramIndex').val('-1');
+          $('#paramModalLabel').text('添加参数');
+          
+          // 显示模态框
+          const paramModal = new bootstrap.Modal(document.getElementById('paramModal'));
+          paramModal.show();
+        });
+        
+        // 参数类型切换事件
+        $('#paramType').on('change', function() {
+          updateParamValueField($(this).val());
+        });
+        
+        // 保存参数按钮事件
+        $('#saveParam').on('click', function() {
+          const form = document.getElementById('paramForm');
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+          
+          const key = $('#paramKey').val();
+          const type = $('#paramType').val();
+          const path = $('#paramPath').val();
+          const index = parseInt($('#paramIndex').val());
+          
+          // 获取值
+          let value;
+          switch (type) {
+            case 'string':
+              value = $('#paramValue').val();
+              break;
+            case 'number':
+              value = parseFloat($('#paramValue').val());
+              break;
+            case 'boolean':
+              value = $('#paramValue').is(':checked');
+              break;
+            case 'object':
+              value = {};
+              break;
+            case 'array':
+              value = [];
+              break;
+          }
+          
+          // 添加或更新参数
+          if (index >= 0) {
+            // 更新现有参数
+            updateParameter(path, index, key, value, type);
+          } else {
+            // 添加新参数
+            addParameter(path, key, value, type);
+          }
+          
+          // 更新JSON视图
+          updateJSONView();
+          
+          // 关闭模态框
+          bootstrap.Modal.getInstance(document.getElementById('paramModal')).hide();
+        });
+        
+        // 显示/隐藏JSON切换
+        $('#show-json-toggle').on('change', function() {
+          $('#json-view').toggleClass('d-none', !$(this).is(':checked'));
+        });
+        
+        // JSON格式化按钮
+        $('#json-format-btn').on('click', function() {
+          formatJSON();
+        });
+        
+        // 初始化JSON视图
+        updateJSONView();
+      }
+      
+      // 更新参数值字段
+      function updateParamValueField(type) {
+        const $container = $('#paramValueContainer');
+        let html = '';
+        
+        switch (type) {
+          case 'string':
+            html = `
+              <label for="paramValue" class="form-label">参数值</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-quote"></i></span>
+                <input type="text" class="form-control" id="paramValue" placeholder="字符串值...">
+              </div>
+              <div class="form-text">文本类型参数，如："示例文本"、"配置名称"等</div>
+            `;
+            break;
+          case 'number':
+            html = `
+              <label for="paramValue" class="form-label">参数值</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-123"></i></span>
+                <input type="number" class="form-control" id="paramValue" step="any" placeholder="0">
+              </div>
+              <div class="form-text">数值类型参数，如：123、0.75、-10等</div>
+            `;
+            break;
+          case 'boolean':
+            html = `
+              <label for="paramValue" class="form-label">参数值</label>
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="paramValue">
+                <label class="form-check-label" for="paramValue">
+                  开启 <span class="text-muted">(true)</span> / 关闭 <span class="text-muted">(false)</span>
+                </label>
+              </div>
+              <div class="form-text">布尔类型参数，表示开/关、是/否状态</div>
+            `;
+            break;
+          case 'object':
+            html = `
+              <label class="form-label">对象值</label>
+              <div class="alert alert-info py-2">
+                <i class="bi bi-info-circle me-2"></i>
+                对象类型 - 保存后可添加子级属性
+              </div>
+              <div class="form-text">对象可以包含多个不同类型的子参数</div>
+            `;
+            break;
+          case 'array':
+            html = `
+              <label class="form-label">数组值</label>
+              <div class="alert alert-info py-2">
+                <i class="bi bi-info-circle me-2"></i>
+                数组类型 - 保存后可添加多个数组元素
+              </div>
+              <div class="form-text">数组可以包含多个相同或不同类型的值</div>
+            `;
+            break;
+        }
+        
+        $container.html(html);
+      }
+      
+      // 添加参数
+      function addParameter(path, key, value, type) {
+        // 直接使用增强版的addParameterToEditor函数
+        addParameterToEditor(path, key, value, type);
+      }
+      
+      // 获取参数类型图标
+      function getTypeIcon(type) {
+        switch (type) {
+          case 'string': return 'bi bi-quote';
+          case 'number': return 'bi bi-123';
+          case 'boolean': return 'bi bi-toggle-on';
+          case 'object': return 'bi bi-braces';
+          case 'array': return 'bi bi-list-ol';
+          default: return 'bi bi-question-circle';
+        }
+      }
+      
+      // 获取参数类型图标样式
+      function getTypeIconClass(type) {
+        switch (type) {
+          case 'string': return 'text-primary';
+          case 'number': return 'text-success';
+          case 'boolean': return 'text-warning';
+          case 'object': return 'text-info';
+          case 'array': return 'text-secondary';
+          default: return 'text-dark';
+        }
+      }
+      
+      // 更新参数
+      function updateParameter(path, index, key, value, type) {
+        const $param = $(`.param-item[data-path="${path}"]`);
+        if ($param.length) {
+          // 更新数据属性
+          $param.attr('data-key', key);
+          $param.attr('data-type', type);
+          
+          // 更新显示内容
+          $param.find('strong').text(key);
+          $param.find('.badge').removeClass().addClass(`badge ${getTypeBadgeClass(type)} ms-2`).text(getTypeLabel(type));
+          
+          // 更新值显示
+          $param.find('.param-value').html(renderParamValue(value, type));
+          
+          // 更新添加子参数按钮
+          const $btnGroup = $param.find('.btn-group');
+          if (type === 'object' || type === 'array') {
+            if (!$btnGroup.find('.add-child-btn').length) {
+              $btnGroup.prepend(`
+                <button type="button" class="btn btn-sm btn-success add-child-btn" title="添加子参数" data-path="${path}">
+                  <i class="bi bi-plus-circle-fill"></i>
+                  <small class="ms-1 d-none d-md-inline">添加子项</small>
+                </button>`);
+              // 绑定添加子参数事件
+              $param.find('.add-child-btn').on('click', function() {
+                showAddChildParamModal($(this).data('path'));
+              });
+            }
+          } else {
+            $btnGroup.find('.add-child-btn').remove();
+          }
+          
+          // 更新参数对象
+          updateParametersObject();
+        }
+      }
+      
+      // 显示添加子参数模态框
+      function showAddChildParamModal(parentPath) {
+        // 重置表单
+        $('#paramForm').trigger('reset');
+        $('#paramPath').val(parentPath);
+        $('#paramIndex').val('-1');
+        
+        // 设置模态框标题
+        const $parentItem = $(`.param-item[data-path="${parentPath}"]`);
+        const parentType = $parentItem.data('type');
+        const parentName = $parentItem.data('key');
+        
+        if (parentType === 'array') {
+          $('#paramModalLabel').text(`添加数组项到 "${parentName}"`);
+          // 对于数组项，参数名称字段不可用
+          $('#paramKey').val('item').prop('disabled', true);
+        } else if (parentType === 'object') {
+          $('#paramModalLabel').text(`添加子属性到 "${parentName}" 对象`);
+          $('#paramKey').prop('disabled', false);
+        } else {
+          // 非对象/数组类型参数，自动转换为对象类型
+          $('#paramModalLabel').text(`添加子参数到 "${parentName}"`);
+          $('#paramKey').prop('disabled', false);
+          
+          // 提示用户将自动转换参数类型
+          alert(`注意: "${parentName}" 当前是 ${getTypeLabel(parentType)} 类型，添加子参数会将其转换为对象类型。`);
+          
+          // 自动转换父参数为对象类型
+          try {
+            const parentPathBase = parentPath.lastIndexOf('.') > -1 ? 
+                                   parentPath.substring(0, parentPath.lastIndexOf('.')) : 
+                                   '';
+            
+            updateParameter(parentPathBase, 
+                            $parentItem.index(), 
+                            parentName, 
+                            {}, 
+                            'object');
+                            
+            // 强制刷新参数显示
+            updateJSONView();
+          } catch (e) {
+            console.error('转换参数类型时出错:', e);
+            alert('无法自动转换参数类型，请先将参数类型修改为对象或数组');
+            return;
+          }
+        }
+        
+        // 重置参数类型
+        $('#paramType').val('string');
+        updateParamValueField('string');
+        
+        // 显示模态框
+        const paramModal = new bootstrap.Modal(document.getElementById('paramModal'));
+        paramModal.show();
+      }
+      
+      // 绑定参数项事件
+      function bindParameterEvents(paramId) {
+        const $param = $(`#${paramId}`);
+        
+        // 编辑参数按钮
+        $param.find('.edit-param-btn').on('click', function() {
+          const $item = $(this).closest('.param-item');
+          const path = $item.data('path');
+          const key = $item.data('key');
+          const type = $item.data('type');
+          
+          // 设置表单值
+          $('#paramPath').val(path);
+          $('#paramIndex').val($item.index());
+          $('#paramKey').val(key).prop('disabled', path.split('.').pop() === 'item');
+          $('#paramType').val(type);
+          updateParamValueField(type);
+          
+          // 设置值
+          if (type === 'string') {
+            $('#paramValue').val($item.find('.param-value').text().trim());
+          } else if (type === 'number') {
+            $('#paramValue').val(parseFloat($item.find('.param-value').text().trim()));
+          } else if (type === 'boolean') {
+            $('#paramValue').prop('checked', $item.find('.param-value').text().trim() === 'true');
+          }
+          
+          // 设置模态框标题
+          $('#paramModalLabel').text('编辑参数');
+          
+          // 显示模态框
+          const paramModal = new bootstrap.Modal(document.getElementById('paramModal'));
+          paramModal.show();
+        });
+        
+        // 删除参数按钮
+        $param.find('.delete-param-btn').on('click', function() {
+          if (confirm('确定要删除此参数吗？')) {
+            const $item = $(this).closest('.param-item');
+            // 如果删除的是父参数，同时删除所有子参数
+            const path = $item.data('path');
+            const $childContainer = $(`.child-params[data-parent="${path}"]`);
+            if ($childContainer.length) {
+              $childContainer.find('.param-item').each(function() {
+                $(this).remove();
+              });
+            }
+            $item.remove();
+            
+            // 如果没有参数了，显示空参数提示
+            if ($('#parameters-container > .param-item').length === 0) {
+              $('.empty-params-placeholder').show();
+            }
+            
+            updateParametersObject();
+            updateJSONView();
+          }
+        });
+        
+        // 添加子参数按钮 - 对所有参数类型都生效
+        $param.find('.add-child-btn').on('click', function() {
+          const path = $(this).closest('.param-item').data('path');
+          showAddChildParamModal(path);
+        });
+        
+        // 确保所有参数都有子参数按钮
+        if ($param.find('.add-child-btn').length === 0) {
+          const path = $param.data('path');
+          $param.find('.btn-group').prepend(`
+            <button type="button" class="btn btn-sm btn-success add-child-btn" title="添加子参数" data-path="${path}">
+              <i class="bi bi-plus-circle-fill"></i>
+              <small class="ms-1 d-none d-md-inline">添加子项</small>
+            </button>
+          `);
+          
+          // 为新添加的按钮绑定事件
+          $param.find('.add-child-btn').on('click', function() {
+            showAddChildParamModal($(this).data('path'));
+          });
+        }
+      }
+      
+      // 获取参数类型标签
+      function getTypeLabel(type) {
+        switch (type) {
+          case 'string': return '字符串';
+          case 'number': return '数字';
+          case 'boolean': return '布尔值';
+          case 'object': return '对象';
+          case 'array': return '数组';
+          default: return type;
+        }
+      }
+      
+      // 获取参数类型徽章样式
+      function getTypeBadgeClass(type) {
+        switch (type) {
+          case 'string': return 'bg-primary';
+          case 'number': return 'bg-success';
+          case 'boolean': return 'bg-warning';
+          case 'object': return 'bg-info';
+          case 'array': return 'bg-secondary';
+          default: return 'bg-dark';
+        }
+      }
+      
+      // 渲染参数值
+      function renderParamValue(value, type) {
+        switch (type) {
+          case 'string':
+            return `<div class="param-value text-muted small mt-1">${value === undefined ? "" : value}</div>`;
+          case 'number':
+            return `<div class="param-value text-muted small mt-1">${value === undefined ? 0 : value}</div>`;
+          case 'boolean':
+            return `<div class="param-value text-muted small mt-1">${value === undefined ? false : value}</div>`;
+          case 'object':
+            return `<div class="param-value text-muted small mt-1 fst-italic">对象 ${Object.keys(value || {}).length ? `(${Object.keys(value).length}个属性)` : "(空)"}</div>`;
+          case 'array':
+            return `<div class="param-value text-muted small mt-1 fst-italic">数组 ${(value || []).length ? `(${value.length}个元素)` : "(空)"}</div>`;
+          default:
+            return `<div class="param-value text-muted small mt-1">-</div>`;
+        }
+      }
+      
+      // 更新参数对象
+      function updateParametersObject() {
+        const params = {};
+        
+        // 获取所有顶级参数
+        $('#parameters-container > .param-item').each(function() {
+          const key = $(this).data('key');
+          const type = $(this).data('type');
+          const path = $(this).data('path');
+          
+          // 递归构建参数对象
+          buildParametersObject(params, key, type, path);
+        });
+        
+        // 更新隐藏的参数字段
+        $('#workflowParameters').val(JSON.stringify(params, null, 2));
+        
+        return params;
+      }
+      
+      // 构建参数对象
+      function buildParametersObject(obj, key, type, path) {
+        // 处理数组项的key
+        const realKey = key.startsWith('item') && !isNaN(key.substring(4)) ? parseInt(key.substring(4)) : key;
+        
+        if (type === 'object') {
+          // 为对象创建空对象
+          if (typeof realKey === 'number') {
+            // 如果是数组中的对象
+            if (!obj[realKey]) obj[realKey] = {};
+            const childObj = obj[realKey];
+            
+            // 处理子参数
+            $(`.child-params[data-parent="${path}"] > .param-item`).each(function() {
+              const childKey = $(this).data('key');
+              const childType = $(this).data('type');
+              const childPath = $(this).data('path');
+              buildParametersObject(childObj, childKey, childType, childPath);
+            });
+          } else {
+            // 如果是正常对象属性
+            obj[realKey] = {};
+            
+            // 处理子参数
+            $(`.child-params[data-parent="${path}"] > .param-item`).each(function() {
+              const childKey = $(this).data('key');
+              const childType = $(this).data('type');
+              const childPath = $(this).data('path');
+              buildParametersObject(obj[realKey], childKey, childType, childPath);
+            });
+          }
+        } else if (type === 'array') {
+          // 为数组创建空数组
+          obj[realKey] = [];
+          
+          // 保存所有数组项
+          const arrayItems = [];
+          
+          // 处理数组项
+          $(`.child-params[data-parent="${path}"] > .param-item`).each(function() {
+            const itemKey = $(this).data('key');
+            const itemType = $(this).data('type');
+            const itemPath = $(this).data('path');
+            
+            // 获取索引（如果存在）
+            let index = 0;
+            if (itemKey.startsWith('item') && !isNaN(itemKey.substring(4))) {
+              index = parseInt(itemKey.substring(4));
+            }
+            
+            // 创建临时对象存储数组项
+            const tempItem = { index: index, value: null, type: itemType, path: itemPath };
+            
+            // 根据类型设置初始值
+            switch (itemType) {
+              case 'string':
+                tempItem.value = $(this).find('.param-value').text().trim();
+                break;
+              case 'number':
+                tempItem.value = parseFloat($(this).find('.param-value').text().trim()) || 0;
+                break;
+              case 'boolean':
+                tempItem.value = $(this).find('.param-value').text().trim() === 'true';
+                break;
+              case 'object':
+                tempItem.value = {};
+                // 子对象将在下一阶段处理
+                break;
+              case 'array':
+                tempItem.value = [];
+                // 子数组将在下一阶段处理
+                break;
+            }
+            
+            // 添加到临时数组
+            arrayItems.push(tempItem);
+          });
+          
+          // 按索引排序，确保顺序正确
+          arrayItems.sort((a, b) => a.index - b.index);
+          
+          // 将项添加到最终数组
+          for (const item of arrayItems) {
+            const itemIndex = obj[realKey].length;
+            obj[realKey].push(item.value);
+            
+            // 如果是复杂类型，递归处理子项
+            if (item.type === 'object' || item.type === 'array') {
+              // 处理对象或数组的子项
+              $(`.child-params[data-parent="${item.path}"] > .param-item`).each(function() {
+                const childKey = $(this).data('key');
+                const childType = $(this).data('type');
+                const childPath = $(this).data('path');
+                buildParametersObject(obj[realKey], itemIndex, childType, childPath);
+              });
+            }
+          }
+        } else {
+          // 简单类型
+          let value;
+          const $param = $(`.param-item[data-path="${path}"]`);
+          const $value = $param.find('.param-value');
+          
+          switch (type) {
+            case 'string':
+              value = $value.text().trim();
+              break;
+            case 'number':
+              value = parseFloat($value.text().trim()) || 0;
+              break;
+            case 'boolean':
+              value = $value.text().trim() === 'true';
+              break;
+            default:
+              value = $value.text().trim();
+          }
+          
+          // 对于数字索引（数组项），进行特殊处理
+          if (typeof realKey === 'number') {
+            obj[realKey] = value;
+          } else {
+            obj[realKey] = value;
+          }
+        }
+      }
+      
+      // 获取参数对象
+      function getParametersObject() {
+        try {
+          return JSON.parse($('#workflowParameters').val() || '{}');
+        } catch (e) {
+          console.error('JSON解析错误:', e);
+          return {};
+        }
+      }
+      
+      // 更新JSON视图
+      function updateJSONView() {
+        const params = updateParametersObject();
+        $('#workflowParameters').val(JSON.stringify(params, null, 2));
+      }
+      
+      // 格式化JSON
+      function formatJSON() {
+        try {
+          const json = JSON.parse($('#workflowParameters').val() || '{}');
+          $('#workflowParameters').val(JSON.stringify(json, null, 2));
+        } catch (e) {
+          alert('JSON格式错误: ' + e.message);
+        }
+      }
+      
+      // 填充参数编辑器
+      function fillParametersEditor(parametersJson) {
+        try {
+          // 清空参数容器
+          $('#parameters-container').empty();
+          
+          // 解析JSON字符串
+          const parameters = typeof parametersJson === 'string' ? 
+            JSON.parse(parametersJson || '{}') : (parametersJson || {});
+          
+          // 递归添加参数
+          for (const key in parameters) {
+            if (parameters.hasOwnProperty(key)) {
+              const value = parameters[key];
+              const type = getValueType(value);
+              
+              // 添加顶级参数
+              addParameterToEditor('', key, value, type);
+            }
+          }
+          
+          // 更新JSON视图
+          updateJSONView();
+        } catch (e) {
+          console.error('填充参数编辑器错误:', e);
+          alert('参数JSON格式错误: ' + e.message);
+        }
+      }
+      
+      // 获取值类型
+      function getValueType(value) {
+        if (value === null) return 'null';
+        if (Array.isArray(value)) return 'array';
+        return typeof value;
+      }
+      
+      // 添加参数到编辑器
+      function addParameterToEditor(path, key, value, type) {
+        // 隐藏空参数占位符
+        $('.empty-params-placeholder').hide();
+        
+        // 查找或创建父容器
+        let $container;
+        if (path) {
+          $container = $(`.child-params[data-parent="${path}"]`);
+          // 如果找不到父容器，可能是因为父参数尚未展开子参数容器
+          if ($container.length === 0) {
+            const parentPath = path.substring(0, path.lastIndexOf('.'));
+            const parentKey = path.substring(path.lastIndexOf('.') + 1);
+            // 递归创建父参数
+            if (parentPath) {
+              addParameterToEditor(parentPath, parentKey, {}, 'object');
+              $container = $(`.child-params[data-parent="${path}"]`);
+            } else {
+              // 顶级参数容器不存在，使用默认容器
+              $container = $('#parameters-container');
+            }
+          }
+        } else {
+          $container = $('#parameters-container');
+        }
+        
+        const paramId = 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        
+        // 构建参数路径
+        const fullPath = path ? `${path}.${key}` : key;
+        
+        // 检查是否已经存在同名参数
+        const existingParam = $container.find(`.param-item[data-key="${key}"]`);
+        if (existingParam.length > 0) {
+          console.warn(`参数 "${key}" 已存在于路径 "${path}"`);
+          // 更新现有参数
+          const existingId = existingParam.attr('id');
+          existingParam.attr('data-type', type);
+          existingParam.find('.badge').removeClass().addClass(`badge ${getTypeBadgeClass(type)} ms-2`).text(getTypeLabel(type));
+          existingParam.find('.param-value').html(renderParamValue(value, type));
+          
+          // 处理子参数容器
+          if (type === 'object' || type === 'array') {
+            existingParam.find('.child-params').show();
+            
+            // 递归添加子参数
+            if (type === 'object') {
+              for (const childKey in value) {
+                if (value.hasOwnProperty(childKey)) {
+                  const childValue = value[childKey];
+                  const childType = getValueType(childValue);
+                  addParameterToEditor(fullPath, childKey, childValue, childType);
+                }
+              }
+            } else if (type === 'array') {
+              value.forEach((item, index) => {
+                const itemType = getValueType(item);
+                addParameterToEditor(fullPath, `item${index}`, item, itemType);
+              });
+            }
+          } else {
+            existingParam.find('.child-params').hide();
+          }
+          
+          return;
+        }
+        
+        // 创建参数卡片
+        let html = `
+          <div class="card mb-2 param-item shadow-sm" id="${paramId}" data-path="${fullPath}" data-key="${key}" data-type="${type}">
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <div class="param-icon me-2 ${getTypeIconClass(type)}" data-level="${path ? path.split('.').length + 1 : 1}">
+                    <i class="${getTypeIcon(type)}"></i>
+                  </div>
+                  <div>
+                    <strong>${key}</strong>
+                    <span class="badge ${getTypeBadgeClass(type)} ms-2">${getTypeLabel(type)}</span>
+                  </div>
+                </div>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-success add-child-btn" title="添加子参数" data-path="${fullPath}">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <small class="ms-1 d-none d-md-inline">添加子项</small>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary edit-param-btn" title="编辑参数">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger delete-param-btn" title="删除参数">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              ${renderParamValue(value, type)}
+              <div class="child-params mt-2 ps-3 border-start" data-parent="${fullPath}" style="${type === 'object' || type === 'array' ? '' : 'display: none;'}"></div>
+            </div>
+          </div>
+        `;
+        
+        // 添加参数
+        $container.append(html).show();
+        
+        // 展开父容器
+        if (path) {
+          const parentParts = path.split('.');
+          let currentPath = '';
+          for (let i = 0; i < parentParts.length; i++) {
+            if (i > 0) currentPath += '.';
+            currentPath += parentParts[i];
+            $(`.child-params[data-parent="${currentPath}"]`).show();
+          }
+        }
+        
+        // 绑定事件
+        bindParameterEvents(paramId);
+        
+        // 递归添加子参数
+        if (type === 'object') {
+          for (const childKey in value) {
+            if (value.hasOwnProperty(childKey)) {
+              const childValue = value[childKey];
+              const childType = getValueType(childValue);
+              addParameterToEditor(fullPath, childKey, childValue, childType);
+            }
+          }
+        } else if (type === 'array') {
+          value.forEach((item, index) => {
+            const itemType = getValueType(item);
+            // 为数组元素使用带索引的名称
+            addParameterToEditor(fullPath, `item${index}`, item, itemType);
+          });
+        }
+        
+        // 更新JSON视图
+        updateJSONView();
+      }
+      
+      // 填充工作流表单
+      function fillWorkflowForm(workflow) {
+        $('#workflowForm').trigger('reset');
+        $('#workflowIndex').val(workflow.index);
+        $('#workflowId').val(workflow.id);
+        $('#workflowName').val(workflow.name);
+        $('#workflowSystem').val(workflow.system);
+        $('#workflowDescription').val(workflow.description || '');
+        $('#workflowVersion').val(workflow.version || '1.0');
+        $('#workflowPriority').val(workflow.priority || 10);
+        $('#workflowParameters').val(JSON.stringify(workflow.parameters, null, 2));
+        $('#workflowMatchPatterns').val(Array.isArray(workflow.matchPatterns) ? workflow.matchPatterns.join('\n') : '');
+        $('#workflowEnabled').prop('checked', workflow.enabled !== false);
+        
+        // 初始化参数编辑器，填充现有参数
+        $('#parameters-container').empty();
+        if (workflow.parameters) {
+          fillParametersEditor(workflow.parameters);
+        }
+      }
     });
   </script>
+  
+  <!-- 参数编辑器模态框 -->
+  <div class="modal fade" id="paramModal" tabindex="-1" aria-labelledby="paramModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="paramModalLabel">添加参数</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <form id="paramForm">
+            <input type="hidden" id="paramPath" value="">
+            <input type="hidden" id="paramIndex" value="-1">
+            
+            <div class="mb-3">
+              <label for="paramKey" class="form-label">参数名称 <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="paramKey" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="paramType" class="form-label">参数类型 <span class="text-danger">*</span></label>
+              <select class="form-select" id="paramType" required>
+                <option value="string">字符串</option>
+                <option value="number">数字</option>
+                <option value="boolean">布尔值</option>
+                <option value="object">对象</option>
+                <option value="array">数组</option>
+              </select>
+            </div>
+            
+            <div id="paramValueContainer" class="mb-3">
+              <label for="paramValue" class="form-label">参数值</label>
+              <input type="text" class="form-control" id="paramValue">
+            </div>
+            
+            <div id="paramDescription" class="form-text">
+              <!-- 参数类型说明将在这里动态显示 -->
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="saveParam">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html> 

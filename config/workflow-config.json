@@ -1,23 +1,32 @@
 [
   {
-    "id": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
-    "system": "ocean",
+    "id": "2707d5d2-36d3-4156-8aea-a40271e45d16",
     "name": "大洋运维助手",
+    "system": "ocean",
     "description": "",
     "version": "1.0",
     "priority": 10,
-    "parameters": {},
+    "parameters": {
+      "person": {
+        "name": "",
+        "sex": ""
+      }
+    },
     "matchPatterns": [],
     "enabled": true
   },
   {
-    "id": "0fa2716c-de91-433d-bad7-46d39fe9091b",
-    "system": "ocean",
-    "name": "索贝运维工作流",
+    "id": "d049771d-cd8e-4d47-919c-b813d0e77729",
+    "name": "索贝工作流配置",
+    "system": "sobey",
     "description": "",
     "version": "1.0",
     "priority": 10,
-    "parameters": {},
+    "parameters": {
+      "cat": {
+        "fur": ""
+      }
+    },
     "matchPatterns": [],
     "enabled": true
   }
