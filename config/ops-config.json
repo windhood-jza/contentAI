@@ -2,26 +2,26 @@
   {
     "id": "default",
     "name": "大洋运维配置",
-    "accessToken": "123213",
+    "accessToken": "pat_ZP4xX2K2yRvNOJYilAyaZGhEFvihX0pYBrhb2ZwzWxT0LjKoYSOs8Ly29mOwHIYb",
     "apiBaseUrl": "https://api.coze.cn/v1/workflow/run",
     "apiTimeout": 30000,
     "recordRetention": 7,
     "defaultSystem": "ocean",
     "promptText": "请输入您的运维问题...",
-    "defaultWorkflowId": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
+    "defaultWorkflowId": "7484170383857811494",
     "enableMarkdown": true,
     "isDefault": true
   },
   {
     "id": "new_1744001508278",
     "name": "索贝运维配置",
-    "accessToken": "321",
+    "accessToken": "pat_ZP4xX2K2yRvNOJYilAyaZGhEFvihX0pYBrhb2ZwzWxT0LjKoYSOs8Ly29mOwHIYb",
     "apiBaseUrl": "https://api.coze.cn/v1/workflow/run",
     "apiTimeout": 30000,
     "recordRetention": 7,
-    "defaultSystem": "ocean",
+    "defaultSystem": "sobey",
     "promptText": "请输入您的运维问题...",
-    "defaultWorkflowId": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
+    "defaultWorkflowId": "d049771d-cd8e-4d47-919c-b813d0e77729",
     "enableMarkdown": true,
     "isDefault": false
   }

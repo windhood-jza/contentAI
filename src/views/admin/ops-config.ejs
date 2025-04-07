@@ -296,7 +296,19 @@
         $('#recordRetention').val(config.recordRetention || 7);
         $('#defaultSystem').val(config.defaultSystem || 'ocean');
         $('#promptText').val(config.promptText || '请输入您的运维问题...');
-        $('#defaultWorkflowId').val(config.defaultWorkflowId || '');
+        
+        // 确保工作流下拉列表已经加载完成
+        if (workflows.length === 0) {
+          // 如果工作流配置还未加载，先加载工作流配置
+          loadWorkflows().then(() => {
+            // 加载完成后设置下拉列表的值
+            $('#defaultWorkflowId').val(config.defaultWorkflowId || '');
+          });
+        } else {
+          // 工作流配置已加载，直接设置
+          $('#defaultWorkflowId').val(config.defaultWorkflowId || '');
+        }
+        
         $('#enableMarkdown').prop('checked', config.enableMarkdown !== false);
         $('#isDefault').prop('checked', config.isDefault === true);
       }
@@ -438,20 +450,26 @@
       
       // 加载工作流配置
       function loadWorkflows() {
-        $.ajax({
-          url: '/admin/workflow-config',
-          method: 'GET',
-          success: function(response) {
-            if (response.success && response.data) {
-              workflows = response.data;
-              updateWorkflowDropdown();
-            } else {
-              console.error('加载工作流配置失败:', response.message || '未知错误');
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url: '/admin/workflow-config',
+            method: 'GET',
+            success: function(response) {
+              if (response.success && response.data) {
+                workflows = response.data;
+                updateWorkflowDropdown();
+                console.log('工作流配置加载成功:', workflows.length);
+                resolve(workflows);
+              } else {
+                console.error('加载工作流配置失败:', response.message || '未知错误');
+                reject(new Error(response.message || '未知错误'));
+              }
+            },
+            error: function(xhr) {
+              console.error('加载工作流配置失败:', xhr.responseJSON?.message || '服务器错误');
+              reject(new Error(xhr.responseJSON?.message || '服务器错误'));
             }
-          },
-          error: function(xhr) {
-            console.error('加载工作流配置失败:', xhr.responseJSON?.message || '服务器错误');
-          }
+          });
         });
       }
       

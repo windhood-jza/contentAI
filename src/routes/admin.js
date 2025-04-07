@@ -306,6 +306,12 @@ router.get('/workflow-config', requireAdmin, opsController.getAllWorkflows);
 // 保存所有工作流配置
 router.post('/workflow-config', requireAdmin, opsController.saveAllWorkflows);
 
+// 获取日志文件列表
+router.get('/logs', requireAdmin, adminController.getLogFiles);
+
+// 获取日志文件内容
+router.get('/logs/:filename', requireAdmin, adminController.getLogContent);
+
 // 测试工作流
 router.post('/workflow-config/test', requireAdmin, opsController.testWorkflow);
 

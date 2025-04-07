@@ -371,13 +371,49 @@
       justify-content: center;
     }
     
+    /* 系统按钮样式 */
+    .ops-icon-sidebar .system-icon {
+      margin-top: 10px;
+    }
+    
+    .ops-icon-sidebar .system-icon:first-of-type {
+      margin-top: 20px;
+    }
+    
+    .ops-icon-sidebar .system-icon.active {
+      background-color: #198754; /* 绿色背景区分系统按钮 */
+    }
+    
+    /* 系统切换消息样式 */
+    .system-change-message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background-color: rgba(25, 135, 84, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .system-change-message.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
     .ops-chat-area {
       width: 100%;
       display: flex;
       flex-direction: column;
       height: 100%;
-      padding: 0;
       position: relative;
+      padding: 0 0 110px 0; /* 底部留出足够空间给输入框 */
+      max-width: 75%; /* 缩小至原来的3/4 */
+      margin: 0 auto; /* 水平居中 */
     }
     
     .chat-container {
@@ -428,6 +464,9 @@
       margin-bottom: 15px;
       clear: both;
       position: relative;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
     }
     
     .user-message {
@@ -643,6 +682,88 @@
     .chat-list-item:hover .delete-btn {
       visibility: visible;
     }
+    
+    /* 问答样式 */
+    .question {
+      color: #0056b3;
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .solution {
+      color: #28a745;
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 5px;
+    }
+    
+    .case {
+      color: #6c757d;
+      display: block;
+      margin-top: 10px;
+      margin-left: 15px;
+    }
+    
+    /* 消息容器样式优化 */
+    .assistant-message .message-content {
+      white-space: normal;
+      line-height: 1.5;
+    }
+    
+    /* 特殊块样式 */
+    .message-content h4 {
+      color: #343a40;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 5px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    /* 列表样式 */
+    .message-content ul {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      padding-left: 20px;
+    }
+    
+    .message-content li {
+      margin-bottom: 5px;
+    }
+    
+    /* 代码块样式 */
+    .message-content pre {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+    
+    .message-content code {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 87.5%;
+      color: #212529;
+    }
+    
+    /* 突出显示关键词 */
+    .message-content strong {
+      font-weight: 600;
+    }
+    
+    /* 错误消息样式 */
+    .error-message {
+      background-color: #f8d7da;
+      border-left: 4px solid #dc3545;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #721c24;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -810,7 +931,13 @@
             <span class="badge bg-primary" id="history-count">0</span>
           </div>
           
-          <!-- 系统选择下拉菜单已移除 -->
+          <!-- 系统选择按钮 -->
+          <div class="sidebar-icon system-icon active" id="ocean-system-icon" data-system="ocean" data-bs-toggle="tooltip" data-bs-placement="right" title="大洋系统">
+            <i class="bi bi-hdd-stack"></i>
+          </div>
+          <div class="sidebar-icon system-icon" id="sobey-system-icon" data-system="sobey" data-bs-toggle="tooltip" data-bs-placement="right" title="索贝系统">
+            <i class="bi bi-collection"></i>
+          </div>
         </div>
         
         <!-- 历史对话列表 -->
@@ -1448,10 +1575,25 @@
       const closeHistoryBtn = document.getElementById('close-history-btn');
       const chatHistoryList = document.getElementById('chat-history-list');
       const historyCount = document.getElementById('history-count');
+      const oceanSystemIcon = document.getElementById('ocean-system-icon');
+      const sobeySystemIcon = document.getElementById('sobey-system-icon');
+      
+      // 添加回车键处理逻辑
+      if (chatInput) {
+        chatInput.addEventListener('keydown', function(e) {
+          // 检查是否按下了回车键(keyCode 13)且没有同时按下Shift键
+          if (e.keyCode === 13 && !e.shiftKey) {
+            e.preventDefault(); // 阻止默认的换行行为
+            chatForm.dispatchEvent(new Event('submit')); // 触发表单提交
+            return false;
+          }
+          // Shift+Enter允许正常换行
+        });
+      }
       
       // 当前会话ID和系统
       let currentChatId = generateChatId();
-      let currentSystem = 'dayang';
+      let currentSystem = 'ocean';
       
       // 初始化工具提示
       const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -1459,9 +1601,98 @@
         return new bootstrap.Tooltip(tooltipTriggerEl);
       });
       
+      // 根据默认系统设置初始placeholder
+      if (currentSystem === 'ocean') {
+        chatInput.placeholder = '请输入大洋系统相关问题...';
+        oceanSystemIcon.classList.add('active');
+      } else if (currentSystem === 'sobey') {
+        chatInput.placeholder = '请输入索贝系统相关问题...';
+        sobeySystemIcon.classList.add('active');
+      }
+      
       // 获取历史对话记录
       loadChatHistory();
       updateHistoryCount();
+      
+      // 系统选择按钮事件处理
+      if (oceanSystemIcon) {
+        oceanSystemIcon.addEventListener('click', function() {
+          // 切换系统前清空输入框
+          chatInput.value = '';
+          
+          currentSystem = 'ocean';
+          updateSystemActiveState('ocean');
+          
+          // 更新输入框提示文本
+          chatInput.placeholder = '请输入大洋系统相关问题...';
+          
+          // 可选：显示系统切换提示
+          const systemChangeMessage = document.createElement('div');
+          systemChangeMessage.className = 'system-change-message';
+          systemChangeMessage.textContent = '已切换到大洋系统';
+          document.body.appendChild(systemChangeMessage);
+          
+          setTimeout(() => {
+            systemChangeMessage.classList.add('show');
+            setTimeout(() => {
+              systemChangeMessage.classList.remove('show');
+              setTimeout(() => {
+                document.body.removeChild(systemChangeMessage);
+              }, 300);
+            }, 1500);
+          }, 10);
+          
+          // 更新历史记录计数
+          updateHistoryCount();
+        });
+      }
+      
+      if (sobeySystemIcon) {
+        sobeySystemIcon.addEventListener('click', function() {
+          // 切换系统前清空输入框
+          chatInput.value = '';
+          
+          currentSystem = 'sobey';
+          updateSystemActiveState('sobey');
+          
+          // 更新输入框提示文本
+          chatInput.placeholder = '请输入索贝系统相关问题...';
+          
+          // 可选：显示系统切换提示
+          const systemChangeMessage = document.createElement('div');
+          systemChangeMessage.className = 'system-change-message';
+          systemChangeMessage.textContent = '已切换到索贝系统';
+          document.body.appendChild(systemChangeMessage);
+          
+          setTimeout(() => {
+            systemChangeMessage.classList.add('show');
+            setTimeout(() => {
+              systemChangeMessage.classList.remove('show');
+              setTimeout(() => {
+                document.body.removeChild(systemChangeMessage);
+              }, 300);
+            }, 1500);
+          }, 10);
+          
+          // 更新历史记录计数
+          updateHistoryCount();
+        });
+      }
+      
+      // 更新系统图标激活状态
+      function updateSystemActiveState(activeSystem) {
+        document.querySelectorAll('.system-icon').forEach(icon => {
+          icon.classList.remove('active');
+        });
+        
+        if (activeSystem === 'ocean') {
+          oceanSystemIcon.classList.add('active');
+          chatInput.placeholder = '请输入大洋系统相关问题...'; // 确保在初始化时也设置正确的placeholder
+        } else if (activeSystem === 'sobey') {
+          sobeySystemIcon.classList.add('active');
+          chatInput.placeholder = '请输入索贝系统相关问题...'; // 确保在初始化时也设置正确的placeholder
+        }
+      }
       
       // 聊天表单提交
       if (chatForm) {
@@ -1481,18 +1712,23 @@
           const typingIndicator = appendTypingIndicator();
           
           // 调用后端API，使用运维助手配置中指定的默认工作流
+          console.log(`[调试信息] 准备发送请求，系统：${currentSystem}，消息：${question}`);
+          const requestData = {
+            message: question,
+            system: currentSystem
+          };
+          console.log(`[调试信息] 请求数据：`, JSON.stringify(requestData, null, 2));
+          
           fetch('/api/ops/workflow', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              message: question,
-              system: currentSystem
-              // 注意：不传递workflowId，后端会使用配置中的默认工作流
-            })
+            body: JSON.stringify(requestData)
           })
           .then(response => {
+            console.log(`[调试信息] 收到响应状态：${response.status} ${response.statusText}`);
+            
             if (!response.ok) {
               throw new Error(`HTTP错误：${response.status}`);
             }
@@ -1502,18 +1738,42 @@
             // 移除"正在输入"的动画
             removeTypingIndicator(typingIndicator);
             
+            console.log(`[运维助手前端] 响应数据:`, data);
+            
             if (data.success) {
-              // 显示回答
-              appendMessage('assistant', data.data.content);
+              console.log(`[运维助手前端] API调用成功，开始处理响应内容`);
               
-              // 保存对话记录
-              saveChatHistory(currentChatId, question, data.data.content, currentSystem);
-              
-              // 更新历史记录列表和计数
-              loadChatHistory();
-              updateHistoryCount();
+              // 检查响应数据结构
+              if (data.data && typeof data.data === 'object') {
+                // 获取处理后的内容
+                const content = data.data.content || '';
+                
+                console.log(`[运维助手前端] 提取到的响应内容长度: ${content.length}`);
+                console.log(`[运维助手前端] 响应解析状态: ${data.data.parsed ? '成功' : '失败'}`);
+                
+                if (content) {
+                  // 显示回答
+                  appendMessage('assistant', content);
+                  
+                  // 保存对话记录
+                  saveChatHistory(currentChatId, question, content, currentSystem);
+                  
+                  // 更新历史记录列表和计数
+                  loadChatHistory();
+                  updateHistoryCount();
+                } else {
+                  // 无内容时显示错误
+                  console.error(`[运维助手前端] 响应无有效内容`);
+                  appendMessage('error', '获取回答时出错: 服务返回空内容');
+                }
+              } else {
+                // 数据结构不符合预期
+                console.error(`[运维助手前端] 响应数据结构异常:`, data);
+                appendMessage('error', '获取回答时出错: 响应格式异常');
+              }
             } else {
               // 显示错误信息
+              console.error(`[运维助手前端] API调用成功但返回错误:`, data.message);
               appendMessage('error', data.message || '获取回答时出错，请稍后再试');
             }
           })
@@ -1522,8 +1782,8 @@
             removeTypingIndicator(typingIndicator);
             
             // 显示错误信息
-            appendMessage('error', `调用工作流出错：${error.message}`);
-            console.error('工作流调用错误:', error);
+            console.error(`[运维助手前端] API调用异常:`, error);
+            appendMessage('error', `调用工作流出错: ${error.message}`);
           });
         });
       }
@@ -1567,9 +1827,12 @@
         // 从localStorage获取历史记录
         const history = getHistoryFromStorage();
         
+        // 仅显示当前选中系统的历史记录
+        const filteredHistory = history.filter(chat => chat.system === currentSystem);
+        
         // 更新UI
         if (chatHistoryList) {
-          if (history.length === 0) {
+          if (filteredHistory.length === 0) {
             chatHistoryList.innerHTML = `
               <div class="text-center p-4 text-muted">
                 <i class="bi bi-chat-left-text fs-4 mb-2"></i>
@@ -1580,9 +1843,9 @@
             chatHistoryList.innerHTML = '';
             
             // 按时间倒序排列
-            history.sort((a, b) => b.timestamp - a.timestamp);
+            filteredHistory.sort((a, b) => b.timestamp - a.timestamp);
             
-            history.forEach(chat => {
+            filteredHistory.forEach(chat => {
               const historyItem = document.createElement('div');
               historyItem.className = `chat-list-item ${chat.id === currentChatId ? 'active' : ''}`;
               historyItem.dataset.chatId = chat.id;
@@ -1602,7 +1865,7 @@
               historyItem.innerHTML = `
                 <div class="chat-title">${title.substring(0, 25)}${title.length > 25 ? '...' : ''}</div>
                 <div class="chat-meta">
-                  <span>${chat.system === 'dayang' ? '大洋系统' : '索贝系统'}</span>
+                  <span>${chat.system === 'ocean' ? '大洋系统' : (chat.system === 'sobey' ? '索贝系统' : '系统')}</span>
                   <span>${formattedDate}</span>
                 </div>
                 <button class="delete-btn" data-chat-id="${chat.id}">
@@ -1674,6 +1937,9 @@
       function appendMessage(role, content) {
         if (!chatMessages) return;
         
+        console.log(`[运维助手前端] 添加消息，角色: ${role}`);
+        console.log(`[运维助手前端] 原始内容前50字符: ${String(content).substring(0, 50).replace(/\n/g, '\\n')}...`);
+        
         // 如果有欢迎信息，先隐藏它
         const welcomeMessage = document.getElementById('welcome-message');
         if (welcomeMessage) {
@@ -1683,24 +1949,47 @@
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${role}-message`;
         
-        // 格式化内容（处理换行符等）
-        const formattedContent = formatContent(content);
+        // 安全处理内容
+        let safeContent = '';
+        try {
+          // 格式化内容（处理换行符等）
+          // 对用户消息和助手消息使用不同的格式化处理
+          safeContent = role === 'user' ? formatUserContent(content) : formatContent(content);
+          console.log(`[运维助手前端] 格式化后内容长度: ${safeContent.length}`);
+        } catch (error) {
+          console.error(`[运维助手前端] 内容格式化失败:`, error);
+          safeContent = `<div class="error-message">内容格式化失败: ${error.message}</div>` + 
+                       `<pre>${String(content).substring(0, 500)}...</pre>`;
+        }
         
-        messageDiv.innerHTML = `
-          <div class="message-content">${formattedContent}</div>
-          ${role === 'assistant' ? `<button class="btn btn-sm copy-btn" title="复制内容"><i class="bi bi-clipboard"></i></button>` : ''}
-        `;
+        // 构建消息HTML
+        if (role === 'error') {
+          messageDiv.innerHTML = `
+            <div class="error-message">${safeContent}</div>
+          `;
+        } else {
+          messageDiv.innerHTML = `
+            <div class="message-content">${safeContent}</div>
+            ${role === 'assistant' ? `<button class="btn btn-sm copy-btn" title="复制内容"><i class="bi bi-clipboard"></i></button>` : ''}
+          `;
+        }
         
         chatMessages.appendChild(messageDiv);
         
-        // 滚动到底部
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // 使用增强的滚动函数确保滚动到底部
+        scrollToBottom();
         
         // 绑定复制功能
         if (role === 'assistant') {
           const copyBtn = messageDiv.querySelector('.copy-btn');
           copyBtn.addEventListener('click', function() {
-            navigator.clipboard.writeText(content).then(() => {
+            // 提取纯文本内容（不包含HTML标签）
+            const tempElement = document.createElement('div');
+            tempElement.innerHTML = safeContent;
+            const plainText = tempElement.textContent || tempElement.innerText || content;
+            
+            navigator.clipboard.writeText(plainText).then(() => {
+              console.log('[运维助手前端] 复制内容成功');
               copyBtn.innerHTML = '<i class="bi bi-check"></i>';
               copyBtn.classList.add('copied');
               
@@ -1708,8 +1997,102 @@
                 copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
                 copyBtn.classList.remove('copied');
               }, 2000);
+            }).catch(err => {
+              console.error('[运维助手前端] 复制失败:', err);
+              alert('复制失败，请重试');
             });
           });
+        }
+      }
+      
+      // 用户消息的简单格式化处理，只做基本的安全处理和换行处理
+      function formatUserContent(content) {
+        // 检查内容是否有效
+        if (content === undefined || content === null) {
+          return '<span class="text-danger">无法显示内容 (内容为空)</span>';
+        }
+        
+        // 确保内容是字符串
+        let textContent = String(content);
+        
+        try {
+          // 只做简单的处理，防止内容被错误格式化
+          // 替换换行符为<br>
+          let formatted = textContent.replace(/\n/g, '<br>');
+          
+          // 对HTML特殊字符进行转义，防止XSS攻击
+          formatted = formatted
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+          
+          // 恢复已经转义的<br>标签
+          formatted = formatted.replace(/&lt;br&gt;/g, '<br>');
+          
+          return formatted;
+        } catch (error) {
+          console.error('[运维助手前端] 格式化用户内容时出错:', error);
+          return `<span class="text-danger">格式化内容出错: ${error.message}</span><br><pre>${textContent}</pre>`;
+        }
+      }
+      
+      // 格式化内容（处理换行符、代码块等），仅用于助手消息
+      function formatContent(content) {
+        console.log('[运维助手前端] 格式化内容, 类型:', typeof content);
+        
+        // 检查内容是否有效
+        if (content === undefined || content === null) {
+          console.error('[运维助手前端] 警告: 收到无效内容', content);
+          return '<span class="text-danger">无法显示内容 (内容为空)</span>';
+        }
+        
+        // 确保内容是字符串
+        let textContent = String(content);
+        
+        try {
+          console.log(`[运维助手前端] 格式化内容长度: ${textContent.length}`);
+          console.log(`[运维助手前端] 内容前100字符: ${textContent.substring(0, 100).replace(/\n/g, '\\n')}`);
+          
+          // 移除多余的空行（3个以上连续换行符替换为2个）
+          let formatted = textContent.replace(/\n{3,}/g, '\n\n');
+          
+          // 替换换行符为<br>
+          formatted = formatted.replace(/\n/g, '<br>');
+          
+          // 处理非编软件问题和解决方案格式
+          formatted = formatted.replace(/(非编[^<]{2,30})(：|:)?/g, '<h4>$1</h4>');
+          formatted = formatted.replace(/解决方案(：|:)?/g, '<strong class="solution">解决方案: </strong>');
+          
+          // 处理"情况N"格式
+          formatted = formatted.replace(/(情况\s*\d+)\s*(：|:)?/g, '<strong class="case">$1: </strong>');
+          
+          // 处理问题标记
+          formatted = formatted.replace(/(问题|提示)(：|:)?/g, '<strong class="question">$1: </strong>');
+          
+          // 处理代码块
+          formatted = formatted.replace(/```(.+?)```/gs, '<pre><code>$1</code></pre>');
+          
+          // 清理特殊控制字符
+          formatted = formatted
+            .replace(/\\u0013|\u0013/g, '')
+            .replace(/\\u0015|\u0015/g, '')
+            .replace(/\\u001e|\u001e/g, '')
+            .replace(/\\u0001|\u0001/g, '[按钮]')
+            .replace(/STYLEREF 1 \\\\s /g, '')
+            .replace(/SEQ 图 \\\\\\* ARABIC \\\\s 1 /g, '');
+          
+          // 处理Markdown样式列表
+          formatted = formatted.replace(/•\s+([^\n]+)/g, '<li>$1</li>');
+          formatted = formatted.replace(/<li>(.+?)<\/li>/g, '<ul><li>$1</li></ul>');
+          formatted = formatted.replace(/<\/ul>\s*<ul>/g, '');
+          
+          console.log('[运维助手前端] 格式化完成');
+          return formatted;
+        } catch (error) {
+          console.error('[运维助手前端] 格式化内容时出错:', error);
+          return `<span class="text-danger">格式化内容出错: ${error.message}</span><br><pre>${textContent}</pre>`;
         }
       }
       
@@ -1729,10 +2112,34 @@
         
         chatMessages.appendChild(typingDiv);
         
-        // 滚动到底部
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // 使用增强的滚动函数确保滚动到底部
+        scrollToBottom();
         
         return typingDiv;
+      }
+      
+      // 增强的滚动到底部函数
+      function scrollToBottom() {
+        if (!chatMessages) return;
+        
+        // 立即滚动一次
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // 延迟滚动以确保DOM完全更新后再次滚动
+        setTimeout(() => {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+        
+        // 再次延迟滚动以处理可能的图片加载或其他延迟内容
+        setTimeout(() => {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          
+          // 获取聊天容器
+          const chatContainer = document.querySelector('.chat-container');
+          if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+          }
+        }, 300);
       }
       
       // 移除"正在输入"的动画
@@ -1740,17 +2147,6 @@
         if (element && element.parentNode) {
           element.parentNode.removeChild(element);
         }
-      }
-      
-      // 格式化内容（处理换行符、代码块等）
-      function formatContent(content) {
-        // 替换换行符为<br>
-        let formatted = content.replace(/\n/g, '<br>');
-        
-        // 处理代码块（简单实现，实际项目可能需要更复杂的处理，例如使用markdown解析器）
-        formatted = formatted.replace(/```(.+?)```/gs, '<pre><code>$1</code></pre>');
-        
-        return formatted;
       }
       
       // 生成唯一的会话ID
@@ -1835,9 +2231,17 @@
       
       // 更新历史记录数量
       function updateHistoryCount() {
+        // 从localStorage获取历史记录
         const history = getHistoryFromStorage();
-        historyCount.textContent = history.length;
-        historyCount.style.display = history.length > 0 ? 'flex' : 'none';
+        
+        // 仅统计当前系统的历史记录
+        const currentSystemHistory = history.filter(chat => chat.system === currentSystem);
+        
+        if (historyCount) {
+          const count = currentSystemHistory.length;
+          historyCount.textContent = count > 0 ? count : '';
+          historyCount.style.display = count > 0 ? 'flex' : 'none';
+        }
       }
       
       // 历史记录图标点击

@@ -726,11 +726,322 @@ const testWorkflow = async (req, res) => {
   }
 };
 
+/**
+ * 执行工作流
+ * @param {Object} req - 请求对象
+ * @param {Object} res - 响应对象
+ */
+const runWorkflow = async (req, res) => {
+  try {
+    const { message, workflowId, system = 'ocean' } = req.body;
+    
+    logger.info(`[运维助手] 接收到工作流执行请求，系统: ${system}, 消息: ${message}`);
+    
+    if (!message) {
+      logger.warn('[运维助手] 缺少必填字段: message');
+      return res.status(400).json({
+        success: false,
+        message: '缺少必填字段: message 为必填项'
+      });
+    }
+    
+    // 读取运维助手配置
+    let configs = [];
+    try {
+      const data = await fsPromises.readFile(OPS_CONFIG_PATH, 'utf8');
+      const parsed = JSON.parse(data);
+      configs = Array.isArray(parsed) ? parsed : [parsed]; // 兼容处理
+      logger.info(`[运维助手] 成功加载 ${configs.length} 个配置`);
+    } catch (error) {
+      logger.error(`[运维助手] 读取运维助手配置失败: ${error.message}`);
+      return res.status(500).json({
+        success: false,
+        message: '读取运维助手配置失败'
+      });
+    }
+    
+    if (configs.length === 0) {
+      logger.warn('[运维助手] 未找到有效的运维助手配置');
+      return res.status(400).json({
+        success: false,
+        message: '未找到有效的运维助手配置'
+      });
+    }
+    
+    // 根据system参数选择配置，默认使用默认配置
+    let config;
+    if (system === 'ocean' || system === 'sobey') {
+      // 查找指定系统的配置
+      config = configs.find(c => c.defaultSystem === system);
+      logger.info(`[运维助手] 查找${system}系统配置: ${config ? '找到' : '未找到'}`);
+    }
+    
+    // 如果没有找到对应系统的配置，则使用默认配置
+    if (!config) {
+      config = configs.find(c => c.isDefault) || configs[0];
+      logger.info(`[运维助手] 使用默认配置: ${config.name}`);
+    }
+    
+    if (!config.accessToken || !config.apiBaseUrl) {
+      logger.error(`[运维助手] 配置 "${config.name}" 缺少必要参数: accessToken 或 apiBaseUrl`);
+      return res.status(400).json({
+        success: false,
+        message: `配置 "${config.name}" 缺少必要参数: accessToken 或 apiBaseUrl`
+      });
+    }
+    
+    // 获取工作流ID - 如果提供则使用提供的，否则使用配置中的默认工作流
+    const targetWorkflowId = workflowId || config.defaultWorkflowId;
+    
+    if (!targetWorkflowId) {
+      logger.error('[运维助手] 未指定工作流ID，且配置中未设置默认工作流');
+      return res.status(400).json({
+        success: false,
+        message: '未指定工作流ID，且配置中未设置默认工作流'
+      });
+    }
+    
+    logger.info(`[运维助手] 使用工作流ID: ${targetWorkflowId}`);
+    
+    // 调用工作流API
+    try {
+      logger.info(`[运维助手] 开始调用工作流API: ${config.apiBaseUrl}`);
+      const result = await callCozeWorkflow(config, targetWorkflowId, message);
+      logger.info(`[运维助手] 工作流API调用成功`);
+      
+      // 安全处理API响应数据
+      let processedResult = {
+        original: result,
+        content: '',
+        parsed: false
+      };
+      
+      try {
+        // 检查是否成功获取响应
+        if (!result) {
+          throw new Error('API返回空响应');
+        }
+        
+        logger.info(`[运维助手] 解析API响应数据，类型: ${typeof result.data}`);
+        
+        // 解析嵌套的JSON
+        if (result.data) {
+          let dataObj;
+          
+          // 如果data是字符串，尝试解析JSON
+          if (typeof result.data === 'string') {
+            dataObj = JSON.parse(result.data);
+            logger.info(`[运维助手] 成功解析data字符串为JSON对象`);
+          } else {
+            dataObj = result.data;
+            logger.info(`[运维助手] data已经是对象类型`);
+          }
+          
+          // 提取输出内容
+          if (dataObj && dataObj.output) {
+            // 处理特殊字符和排版
+            let cleanedOutput = dataObj.output
+              .replace(/\\n/g, '\n')  // 转换转义换行符为实际换行符
+              .replace(/\\\\/g, '\\') // 处理双重转义
+              .trim();                // 移除首尾空白
+            
+            processedResult.content = cleanedOutput;
+            processedResult.parsed = true;
+            logger.info(`[运维助手] 成功提取并清理输出内容，长度: ${processedResult.content.length}`);
+            
+            // 记录内容摘要，帮助调试
+            const contentPreview = cleanedOutput.substring(0, 200).replace(/\n/g, '\\n');
+            logger.info(`[运维助手] 内容前200字符: ${contentPreview}...`);
+          } else {
+            logger.warn(`[运维助手] 未从数据中找到output字段: ${JSON.stringify(dataObj)}`);
+            processedResult.content = '系统未返回有效内容';
+          }
+        } else {
+          logger.warn(`[运维助手] 响应中不包含data字段: ${JSON.stringify(result)}`);
+          processedResult.content = '系统返回数据格式异常';
+        }
+      } catch (parseError) {
+        logger.error(`[运维助手] 解析API响应失败: ${parseError.message}`);
+        processedResult.content = `解析响应失败: ${parseError.message}`;
+        processedResult.error = parseError.message;
+      }
+      
+      // 返回处理后的结果
+      logger.info(`[运维助手] 响应处理完成，内容长度: ${processedResult.content.length}`);
+      return res.json({
+        success: true,
+        data: processedResult
+      });
+    } catch (error) {
+      logger.error(`[运维助手] 工作流API调用失败: ${error.message}`);
+      throw error; // 让外层捕获处理
+    }
+  } catch (error) {
+    logger.error(`[运维助手] 执行工作流出错: ${error.message}`, error);
+    return res.status(500).json({
+      success: false,
+      message: `执行工作流出错: ${error.message}`
+    });
+  }
+};
+
+/**
+ * 调用Coze工作流API
+ * @param {Object} config - 运维助手配置
+ * @param {string} workflowId - 工作流ID
+ * @param {string} message - 用户消息
+ * @returns {Promise<Object>} - API响应结果
+ */
+async function callCozeWorkflow(config, workflowId, message) {
+  try {
+    // 确保工作流ID格式正确，去除可能的空格
+    const cleanWorkflowId = workflowId ? workflowId.trim() : '';
+    
+    if (!cleanWorkflowId) {
+      throw new Error('工作流ID不能为空');
+    }
+    
+    // 从工作流配置文件中获取该工作流的参数设置
+    let workflow = null;
+    try {
+      const workflowsData = await fsPromises.readFile(WORKFLOW_CONFIG_PATH, 'utf8');
+      const workflows = JSON.parse(workflowsData);
+      workflow = workflows.find(w => w.id.trim() === cleanWorkflowId);
+    } catch (error) {
+      logger.warn(`[运维助手] 读取工作流配置失败: ${error.message}，将使用默认参数名`);
+    }
+    
+    // 构造请求负载
+    const payload = {
+      workflow_id: cleanWorkflowId,
+      parameters: {}
+    };
+    
+    // 确定参数如何映射
+    if (workflow && workflow.parameters) {
+      logger.info(`[运维助手] 找到工作流配置的参数结构:`, workflow.parameters);
+      
+      // 检查参数格式并映射用户消息
+      if (typeof workflow.parameters === 'object') {
+        if (Object.keys(workflow.parameters).length === 0) {
+          // 空参数对象，使用默认input
+          payload.parameters.input = message;
+          logger.info(`[运维助手] 工作流参数为空对象，使用默认参数名: input`);
+        } else {
+          // 直接复制整个parameters结构
+          payload.parameters = JSON.parse(JSON.stringify(workflow.parameters));
+          
+          // 将用户输入填入第一个参数
+          const firstKey = Object.keys(workflow.parameters)[0];
+          if (typeof workflow.parameters[firstKey] === 'string' || workflow.parameters[firstKey] === null || workflow.parameters[firstKey] === "") {
+            // 如果第一个参数是字符串或空值，直接替换
+            payload.parameters[firstKey] = message;
+            logger.info(`[运维助手] 继承工作流参数结构，将用户输入填入参数: ${firstKey}`);
+          } else if (typeof workflow.parameters[firstKey] === 'object' && !Array.isArray(workflow.parameters[firstKey])) {
+            // 如果第一个参数是对象，保留结构，但修改其中可能的字符串值
+            const nestedFirstKey = Object.keys(workflow.parameters[firstKey])[0];
+            if (nestedFirstKey && (typeof workflow.parameters[firstKey][nestedFirstKey] === 'string' || workflow.parameters[firstKey][nestedFirstKey] === null || workflow.parameters[firstKey][nestedFirstKey] === "")) {
+              payload.parameters[firstKey][nestedFirstKey] = message;
+              logger.info(`[运维助手] 继承工作流嵌套参数结构，将用户输入填入嵌套参数: ${firstKey}.${nestedFirstKey}`);
+            } else {
+              // 如果嵌套结构复杂，仍使用第一个参数
+              payload.parameters[firstKey] = message;
+              logger.info(`[运维助手] 嵌套参数结构复杂，覆盖第一个参数: ${firstKey}`);
+            }
+          } else {
+            // 其他情况，替换第一个参数
+            payload.parameters[firstKey] = message;
+            logger.info(`[运维助手] 参数格式不是字符串或对象，覆盖第一个参数: ${firstKey}`);
+          }
+        }
+      } else {
+        // 非对象参数，使用默认
+        payload.parameters.input = message;
+        logger.info(`[运维助手] 工作流参数格式不是对象，使用默认参数名: input`);
+      }
+    } else {
+      // 默认使用 input 作为参数名
+      payload.parameters.input = message;
+      logger.info(`[运维助手] 未找到工作流参数配置，使用默认参数名: input`);
+    }
+    
+    // 构造请求配置
+    const requestConfig = {
+      method: 'post',
+      url: config.apiBaseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.accessToken}`
+      },
+      data: payload,
+      timeout: config.apiTimeout || 30000
+    };
+    
+    // 记录完整请求信息（隐藏部分敏感信息）
+    const safeHeaders = { ...requestConfig.headers };
+    if (safeHeaders.Authorization) {
+      safeHeaders.Authorization = safeHeaders.Authorization.substring(0, 15) + '...[隐藏]';
+    }
+    
+    logger.info('==================== API请求开始 ====================');
+    logger.info(`[运维助手] 请求方法: ${requestConfig.method.toUpperCase()}`);
+    logger.info(`[运维助手] 请求URL: ${requestConfig.url}`);
+    logger.info(`[运维助手] 请求头:`, JSON.stringify(safeHeaders, null, 2));
+    logger.info(`[运维助手] 请求体:`, JSON.stringify(payload, null, 2));
+    logger.info(`[运维助手] 请求超时: ${requestConfig.timeout}ms`);
+    
+    // 发送请求
+    const response = await axios(requestConfig);
+    
+    // 记录完整响应信息
+    logger.info('==================== API响应开始 ====================');
+    logger.info(`[运维助手] 响应状态: ${response.status} ${response.statusText}`);
+    logger.info(`[运维助手] 响应头:`, JSON.stringify(response.headers, null, 2));
+    logger.info(`[运维助手] 响应体:`, JSON.stringify(response.data, null, 2));
+    logger.info('==================== API响应结束 ====================');
+    
+    return response.data;
+  } catch (error) {
+    logger.info('==================== API错误开始 ====================');
+    
+    if (error.response) {
+      // 记录API错误响应
+      logger.error(`[运维助手] API错误响应码: ${error.response.status} ${error.response.statusText}`);
+      logger.error(`[运维助手] API错误响应头:`, JSON.stringify(error.response.headers, null, 2));
+      logger.error(`[运维助手] API错误响应数据:`, JSON.stringify(error.response.data, null, 2));
+      
+      // 对常见错误进行更详细的解释
+      if (error.response.status === 404) {
+        logger.error(`[运维助手] 工作流ID不存在或无效: ${cleanWorkflowId}`);
+      } else if (error.response.status === 401) {
+        logger.error(`[运维助手] 授权失败，请检查Access Token是否有效`);
+      } else if (error.response.status === 400) {
+        logger.error(`[运维助手] 请求参数错误，请检查工作流ID和消息格式`);
+      }
+      
+      throw new Error(`API请求失败: ${error.response.status} - ${error.response.statusText || '未知错误'} - ${JSON.stringify(error.response.data)}`);
+    } else if (error.request) {
+      // 请求已发送但未收到响应
+      logger.error(`[运维助手] 未收到API响应:`, error.message);
+      logger.error(`[运维助手] 请求配置:`, error.config && JSON.stringify(error.config, null, 2));
+      throw new Error(`未收到API响应: ${error.message}`);
+    } else {
+      // 请求设置时出错
+      logger.error(`[运维助手] 请求设置错误:`, error.message);
+      logger.error(`[运维助手] 请求配置:`, error.config && JSON.stringify(error.config, null, 2));
+      throw new Error(`请求设置错误: ${error.message}`);
+    }
+    
+    logger.info('==================== API错误结束 ====================');
+  }
+}
+
 module.exports = {
   getOpsConfig,
   saveOpsConfig,
   testConnection,
   getAllWorkflows,
   saveAllWorkflows,
-  testWorkflow
+  testWorkflow,
+  runWorkflow
 }; 

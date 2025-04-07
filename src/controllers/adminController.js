@@ -6,6 +6,10 @@
 const config = require('../config');
 const fs = require('fs');
 const path = require('path');
+const { promisify } = require('util');
+const readFileAsync = promisify(fs.readFile);
+const readdirAsync = promisify(fs.readdir);
+const statAsync = promisify(fs.stat);
 
 // 配置历史记录目录
 const CONFIG_HISTORY_DIR = path.join(__dirname, '../../config_history');
@@ -507,6 +511,116 @@ exports.rollbackConfig = (req, res) => {
       success: false,
       message: '回滚配置失败',
       error: error.message
+    });
+  }
+};
+
+/**
+ * 获取日志文件列表
+ * @param {Object} req - Express请求对象
+ * @param {Object} res - Express响应对象
+ */
+exports.getLogFiles = async (req, res) => {
+  try {
+    const logDir = path.join(__dirname, '../../logs');
+    
+    // 确保日志目录存在
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    
+    // 读取日志目录下的所有文件
+    const files = await readdirAsync(logDir);
+    
+    // 获取文件详细信息
+    const logFiles = await Promise.all(
+      files.filter(file => file.endsWith('.log')).map(async (file) => {
+        const filePath = path.join(logDir, file);
+        const stats = await statAsync(filePath);
+        
+        return {
+          name: file,
+          size: `${(stats.size / 1024).toFixed(2)}KB`,
+          modified: stats.mtime.toISOString(),
+          path: filePath
+        };
+      })
+    );
+    
+    // 按修改时间倒序排序
+    logFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    
+    res.json({
+      success: true,
+      data: logFiles
+    });
+  } catch (error) {
+    console.error('获取日志文件列表失败:', error);
+    res.status(500).json({
+      success: false,
+      message: `获取日志文件列表失败: ${error.message}`
+    });
+  }
+};
+
+/**
+ * 读取日志文件内容
+ * @param {Object} req - Express请求对象
+ * @param {Object} res - Express响应对象
+ */
+exports.getLogContent = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { lines = 100, offset = 0 } = req.query;
+    
+    // 安全检查：确保文件名不包含路径操作符
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的文件名'
+      });
+    }
+    
+    const logDir = path.join(__dirname, '../../logs');
+    const filePath = path.join(logDir, filename);
+    
+    // 检查文件是否存在
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: '日志文件不存在'
+      });
+    }
+    
+    // 读取文件内容
+    const content = await readFileAsync(filePath, 'utf8');
+    const allLines = content.split('\n');
+    
+    // 去掉空行
+    const nonEmptyLines = allLines.filter(line => line.trim().length > 0);
+    
+    // 计算总行数
+    const totalLines = nonEmptyLines.length;
+    
+    // 计算需要返回的行
+    const start = Math.max(0, Math.min(offset, totalLines - 1));
+    const end = Math.min(start + parseInt(lines), totalLines);
+    const selectedLines = nonEmptyLines.slice(start, end);
+    
+    res.json({
+      success: true,
+      data: {
+        filename,
+        totalLines,
+        offset: start,
+        lines: selectedLines
+      }
+    });
+  } catch (error) {
+    console.error('读取日志内容失败:', error);
+    res.status(500).json({
+      success: false,
+      message: `读取日志内容失败: ${error.message}`
     });
   }
 }; 

@@ -19,6 +19,9 @@ const indexRoutes = require('./src/routes/index');
 const searchRoutes = require('./src/routes/search');
 const adminRoutes = require('./src/routes/admin');
 
+// 导入控制器
+const opsController = require('./src/controllers/opsController');
+
 // 创建Express应用
 const app = express();
 
@@ -52,6 +55,19 @@ app.use('/', indexRoutes);
 app.use('/search', searchRoutes);
 app.use('/admin', adminRoutes);
 
+// 运维助手API路由
+app.post('/api/ops/workflow', async (req, res) => {
+  try {
+    await opsController.runWorkflow(req, res);
+  } catch (error) {
+    console.error('运行工作流出错:', error);
+    res.status(500).json({
+      success: false,
+      message: `运行工作流出错: ${error.message}`
+    });
+  }
+});
+
 // 错误处理中间件
 app.use((req, res, next) => {
   const err = new Error('Not Found');
@@ -73,4 +89,4 @@ app.listen(PORT, () => {
   console.log(`ContentAI 服务器运行在端口 ${PORT}`);
 });
 
-module.exports = app; 
+module.exports = app;

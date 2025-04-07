@@ -1,16 +1,13 @@
 [
   {
-    "id": "2707d5d2-36d3-4156-8aea-a40271e45d16",
+    "id": "7484170383857811494",
     "name": "大洋运维助手",
     "system": "ocean",
     "description": "",
     "version": "1.0",
     "priority": 10,
     "parameters": {
-      "person": {
-        "name": "",
-        "sex": ""
-      }
+      "input": ""
     },
     "matchPatterns": [],
     "enabled": true
