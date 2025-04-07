@@ -19,12 +19,13 @@
     
     body {
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow: hidden; /* 完全禁用页面滚动 */
     }
     
     .app-container {
       display: flex;
       min-height: 100vh;
+      overflow: hidden; /* 确保应用容器不滚动 */
     }
     
     /* 侧边栏样式 */
@@ -136,6 +137,7 @@
       width: calc(100% - var(--sidebar-width));
       min-height: 100vh;
       position: relative;
+      overflow: hidden; /* 禁止主内容区域滚动 */
     }
     
     .sidebar.collapsed + .main-content {
@@ -194,6 +196,7 @@
       min-height: calc(100vh - 70px);
       overflow: hidden; /* 防止body级别滚动 */
       margin-top: 70px; /* 为固定的标题留出空间 */
+      height: calc(100vh - 70px); /* 固定高度 */
     }
     
     /* 搜索模块样式 */
@@ -418,21 +421,42 @@
     
     .chat-container {
       flex: 1;
-      overflow-y: auto; /* 仅允许聊天容器滚动 */
+      overflow-y: auto; /* 仅聊天容器允许垂直滚动 */
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 10px;
       height: 100%;
       margin-bottom: 0;
       padding-bottom: 100px; /* 为固定在底部的输入框留出空间 */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Webkit浏览器的滚动条样式 */
+    .chat-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .chat-container::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0, 0, 0, 0.3);
     }
     
     .chat-input-container {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
+      position: absolute; /* 改为absolute，相对于聊天区域定位 */
+      bottom: 40px; /* 从20px增加到40px，让输入框上移 */
+      left: 50%; /* 相对于聊天区域的中间 */
       transform: translateX(-50%);
-      width: 70%;
+      width: 90%; /* 宽度调整为聊天区域的90% */
       max-width: 800px;
       background-color: #fff;
       border-radius: 15px;
@@ -449,7 +473,8 @@
       border: none;
       resize: none;
       padding: 15px;
-      height: 60px;
+      height: 55px; /* 调整为55px */
+      min-height: 55px; /* 设置最小高度 */
     }
     
     .chat-input-container .btn {
