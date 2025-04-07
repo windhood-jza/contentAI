@@ -1,0 +1,26 @@
+[
+  {
+    "id": "default",
+    "name": "大洋运维配置",
+    "accessToken": "123213",
+    "apiBaseUrl": "https://api.coze.cn/v1/workflow/run",
+    "apiTimeout": 30000,
+    "recordRetention": 7,
+    "defaultSystem": "ocean",
+    "promptText": "请输入您的运维问题...",
+    "enableMarkdown": true,
+    "isDefault": true
+  },
+  {
+    "id": "new_1744001508278",
+    "name": "索贝运维配置",
+    "accessToken": "321",
+    "apiBaseUrl": "https://api.coze.cn/v1/workflow/run",
+    "apiTimeout": 30000,
+    "recordRetention": 7,
+    "defaultSystem": "ocean",
+    "promptText": "请输入您的运维问题...",
+    "enableMarkdown": true,
+    "isDefault": false
+  }
+]

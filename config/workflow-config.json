@@ -1,0 +1,13 @@
+[
+  {
+    "id": "28ebfa2b-ea1b-4c47-b726-02bf8eb85691",
+    "system": "ocean",
+    "name": "大洋运维助手",
+    "description": "",
+    "version": "1.0",
+    "priority": 10,
+    "parameters": {},
+    "matchPatterns": [],
+    "enabled": true
+  }
+]

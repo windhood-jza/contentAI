@@ -10,6 +10,7 @@ const path = require('path');
 const configController = require('../controllers/configController');
 const workflowController = require('../controllers/workflowController');
 const opsController = require('../controllers/opsController');
+const { logger } = require('../utils/logger');
 
 /**
  * 管理员验证中间件
@@ -225,42 +226,88 @@ router.post('/config/:type', requireAdmin, configController.saveConfigByType);
  */
 router.post('/config/:type/reset', requireAdmin, configController.resetConfigByType);
 
-// 运维助手配置路由
+/**
+ * 运维助手配置页面
+ * @route GET /admin/ops-config/page
+ */
+router.get('/ops-config/page', requireAdmin, (req, res) => {
+  try {
+    res.render('admin/ops-config');
+  } catch (error) {
+    logger.error('渲染运维助手配置页面失败:', error);
+    res.status(500).send('服务器错误');
+  }
+});
+
+/**
+ * 获取运维助手配置
+ * @route GET /admin/ops-config
+ */
 router.get('/ops-config', requireAdmin, async (req, res) => {
   try {
     await opsController.getOpsConfig(req, res);
   } catch (error) {
-    console.error('加载运维助手配置页面失败:', error);
+    logger.error('获取运维助手配置失败:', error);
     res.status(500).json({
       success: false,
-      message: `加载运维助手配置页面失败: ${error.message}`
+      message: '获取运维助手配置失败'
     });
   }
 });
 
+/**
+ * 保存运维助手配置
+ * @route POST /admin/ops-config
+ */
 router.post('/ops-config', requireAdmin, async (req, res) => {
   try {
-    await opsController.updateOpsConfig(req, res);
+    await opsController.saveOpsConfig(req, res);
   } catch (error) {
-    console.error('更新运维助手配置失败:', error);
+    logger.error('保存运维助手配置失败:', error);
     res.status(500).json({
       success: false,
-      message: `更新运维助手配置失败: ${error.message}`
+      message: '保存运维助手配置失败'
     });
   }
 });
 
+/**
+ * 测试API连接
+ * @route POST /admin/ops-config/test-connection
+ */
 router.post('/ops-config/test-connection', requireAdmin, async (req, res) => {
   try {
-    await opsController.testOpsApiConnection(req, res);
+    await opsController.testConnection(req, res);
   } catch (error) {
-    console.error('测试运维助手API连接失败:', error);
+    logger.error('测试API连接失败:', error);
     res.status(500).json({
       success: false,
-      message: `测试运维助手API连接失败: ${error.message}`
+      message: '测试API连接失败'
     });
   }
 });
+
+/**
+ * 工作流配置页面
+ * @route GET /admin/workflow-config/page
+ */
+router.get('/workflow-config/page', requireAdmin, (req, res) => {
+  try {
+    res.render('admin/workflow-config');
+  } catch (error) {
+    logger.error('渲染工作流配置页面失败:', error);
+    res.status(500).send('服务器错误');
+  }
+});
+
+// 获取所有工作流配置
+router.get('/workflow-config', requireAdmin, opsController.getAllWorkflows);
+
+// 保存所有工作流配置
+router.post('/workflow-config', requireAdmin, opsController.saveAllWorkflows);
+
+// 测试工作流
+router.post('/workflow-config/test', requireAdmin, opsController.testWorkflow);
 
 // 工作流配置路由
 router.get('/workflows', requireAdmin, async (req, res) => {
@@ -359,90 +406,4 @@ router.get('/workflows/system/:system', requireAdmin, async (req, res) => {
   }
 });
 
-// 配置API - 处理API请求
-router.get('/api/config/:type', requireAdmin, async (req, res) => {
-  console.log(`获取配置类型: ${req.params.type}`);
-  try {
-    const type = req.params.type;
-    // 从配置控制器获取配置
-    if (typeof configController.getConfigByType === 'function') {
-      // 覆盖请求参数，以便控制器可以正确处理
-      req.params.type = type;
-      await configController.getConfigByType(req, res);
-    } else {
-      // 如果控制器方法不存在，返回默认响应
-      res.json({
-        success: true,
-        data: {
-          [type]: {}
-        },
-        message: `获取${type}配置成功(默认值)`
-      });
-    }
-  } catch (error) {
-    console.error(`获取配置失败: ${error.message}`);
-    res.status(500).json({
-      success: false,
-      message: `获取配置失败: ${error.message}`
-    });
-  }
-});
-
-router.post('/api/config/:type', requireAdmin, async (req, res) => {
-  console.log(`保存配置类型: ${req.params.type}`, req.body);
-  try {
-    const type = req.params.type;
-    // 调用配置控制器来保存配置
-    if (typeof configController.saveConfigByType === 'function') {
-      // 覆盖请求参数，以便控制器可以正确处理
-      req.params.type = type;
-      await configController.saveConfigByType(req, res);
-    } else {
-      // 如果控制器方法不存在，返回默认响应
-      res.json({
-        success: true,
-        message: `保存${type}配置成功(默认响应)`
-      });
-    }
-  } catch (error) {
-    console.error(`保存配置失败: ${error.message}`);
-    res.status(500).json({
-      success: false,
-      message: `保存配置失败: ${error.message}`
-    });
-  }
-});
-
-// 添加对/admin/config POST请求的处理
-router.post('/config', requireAdmin, (req, res) => {
-  console.log('接收到/admin/config的POST请求，重定向到正确API');
-  
-  // 获取请求的配置类型参数
-  const configType = req.query.type || 'api'; // 默认为api
-  
-  // 重定向到正确的API路径
-  return res.redirect(307, `/admin/api/config/${configType}`);
-});
-
-// 添加重定向路由 - 处理错误格式的URL
-router.get('*', (req, res, next) => {
-  const path = req.path;
-  console.log(`处理可能的错误路径: ${path}`);
-  
-  // 检查是否需要重定向
-  if (path.includes('_')) {
-    const correctedPath = path.replace(/_/g, '/');
-    console.log(`重定向下划线路径: ${path} => ${correctedPath}`);
-    return res.redirect(`/admin${correctedPath}`);
-  }
-  
-  // 特殊处理 - 如果直接访问 /admin/config，重定向到 /admin/config/api
-  if (path === '/config') {
-    console.log('重定向/config到/config/api');
-    return res.redirect('/admin/config/api');
-  }
-  
-  next();
-});
-
-module.exports = router; 
+module.exports = router;

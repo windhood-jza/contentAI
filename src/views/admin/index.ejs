@@ -139,6 +139,18 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="#ops-config" data-bs-toggle="tab">
+                <i class="bi bi-headset me-2"></i>
+                运维助手配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#workflow-config" data-bs-toggle="tab">
+                <i class="bi bi-diagram-3 me-2"></i>
+                工作流配置
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="#config-history" data-bs-toggle="tab">
                 <i class="bi bi-clock-history me-2"></i>
                 配置历史
@@ -263,6 +275,12 @@
           return;
         } else if (tabId === 'import-export') {
           loadImportExportTab($tabPane, title);
+          return;
+        } else if (tabId === 'ops-config') {
+          loadOpsConfigTab($tabPane, title);
+          return;
+        } else if (tabId === 'workflow-config') {
+          loadWorkflowConfigTab($tabPane, title);
           return;
         }
         
@@ -1015,7 +1033,9 @@
           'performance-config': '<i class="bi bi-graph-up me-2"></i>性能配置',
           'feedback-config': '<i class="bi bi-chat-left-text me-2"></i>用户反馈配置',
           'config-history': '<i class="bi bi-clock-history me-2"></i>配置历史',
-          'import-export': '<i class="bi bi-arrow-left-right me-2"></i>导入/导出'
+          'import-export': '<i class="bi bi-arrow-left-right me-2"></i>导入/导出',
+          'ops-config': '<i class="bi bi-headset me-2"></i>运维助手配置',
+          'workflow-config': '<i class="bi bi-diagram-3 me-2"></i>工作流配置'
         };
         
         return titleMap[tabId] || tabId;
@@ -1076,7 +1096,8 @@
       
       // 初始化：创建缺少的tab面板
       const tabIds = ['api-config', 'search-config', 'ui-config', 'cache-config', 
-                      'performance-config', 'feedback-config', 'config-history', 'import-export'];
+                      'performance-config', 'feedback-config', 'ops-config', 'workflow-config', 
+                      'config-history', 'import-export'];
       
       tabIds.forEach(function(tabId) {
         // 检查是否已经存在
@@ -1099,6 +1120,28 @@
           loadTabContent(hash);
         }
       }
+
+      // 格式化日期时间
+      function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('zh-CN');
+      }
+
+      // 加载运维助手配置页面
+      function loadOpsConfigTab($tabPane, title) {
+        // 重定向到独立的运维助手配置页面
+        window.location.href = '/admin/ops-config/page';
+      }
+      
+      // 加载工作流配置页面
+      function loadWorkflowConfigTab($tabPane, title) {
+        // 重定向到独立的工作流配置页面
+        window.location.href = '/admin/workflow-config/page';
+      }
+      
+      // 初始化事件绑定
+      init();
     });
   </script>
 </body>
