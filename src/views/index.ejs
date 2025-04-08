@@ -1141,6 +1141,12 @@
           // 获取模块ID
           const moduleId = this.dataset.moduleId;
           
+          // 对管理模块特殊处理 - 直接重定向，不经过前端路由
+          if (moduleId === 'admin') {
+            window.location.href = "/admin";
+            return;
+          }
+          
           // 查找模块定义
           const module = modules.find(m => m.id === moduleId);
           
@@ -1162,6 +1168,13 @@
       // 监听URL哈希变化
       window.addEventListener('hashchange', () => {
         const hash = window.location.hash.substring(1);
+        
+        // 对管理模块特殊处理 - 当URL为#admin时直接重定向
+        if (hash === 'admin') {
+          window.location.href = "/admin";
+          return;
+        }
+        
         if (hash) {
           loadModule(hash);
         } else {
@@ -1173,6 +1186,12 @@
     // 加载默认模块
     function loadDefaultModule() {
       const hash = window.location.hash.substring(1);
+      
+      // 检查URL哈希是否指向admin
+      if (hash === 'admin') {
+        window.location.href = "/admin";
+        return;
+      }
       
       if (hash) {
         loadModule(hash);
@@ -1196,7 +1215,13 @@
         return;
       }
       
-      // 管理模块需要登录
+      // 对管理模块特殊处理 - 直接重定向到独立管理页面
+      if (moduleId === 'admin') {
+        window.location.href = "/admin";
+        return; // 立即返回，不执行后续加载逻辑
+      }
+      
+      // 管理模块需要登录检查（此逻辑现在只针对其他非admin模块）
       if (moduleId === 'admin' && !appState.isAuthenticated) {
         redirectToLogin();
         return;
@@ -1237,12 +1262,10 @@
         case 'search':
           initSearchModule();
           break;
-        case 'admin':
-          initAdminModule();
-          break;
         case 'ops':
           initOpsModule();
           break;
+        // admin模块现在在loadModule中直接处理，不再需要在这里处理
         // 其他模块的初始化...
       }
     }
