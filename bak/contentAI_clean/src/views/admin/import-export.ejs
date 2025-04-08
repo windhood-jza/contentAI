@@ -1,0 +1,462 @@
+<!-- 导入导出页面 -->
+<div class="tab-pane fade" id="import-export" role="tabpanel" aria-labelledby="import-export-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-box-arrow-in-down"></i> 配置导入与导出</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 在此页面，您可以导出当前配置或导入配置文件，便于配置的备份、恢复或在不同环境间迁移。
+    </div>
+    
+    <div class="row mb-4">
+      <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0">导出配置</h5>
+          </div>
+          <div class="card-body">
+            <p>选择要导出的配置类型，然后点击导出按钮以下载JSON格式的配置文件。</p>
+            
+            <form id="export-form">
+              <div class="mb-4">
+                <label class="form-label">选择要导出的配置</label>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check" type="checkbox" id="export-all" checked>
+                  <label class="form-check-label" for="export-all">
+                    <strong>所有配置</strong>
+                  </label>
+                </div>
+                <hr class="my-2">
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-api" checked>
+                  <label class="form-check-label" for="export-api">API配置</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-search" checked>
+                  <label class="form-check-label" for="export-search">搜索配置</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-ui" checked>
+                  <label class="form-check-label" for="export-ui">UI配置</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-cache" checked>
+                  <label class="form-check-label" for="export-cache">缓存配置</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-performance" checked>
+                  <label class="form-check-label" for="export-performance">性能配置</label>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input export-check config-check" type="checkbox" id="export-feedback" checked>
+                  <label class="form-check-label" for="export-feedback">反馈配置</label>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="export-include-timestamp" checked>
+                  <label class="form-check-label" for="export-include-timestamp">
+                    包含导出时间戳
+                  </label>
+                  <div class="form-text">在导出文件中添加导出日期和时间</div>
+                </div>
+              </div>
+              
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary" id="export-btn">
+                  <i class="bi bi-download"></i> 导出配置
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0">导入配置</h5>
+          </div>
+          <div class="card-body">
+            <p>上传之前导出的配置文件以恢复配置。</p>
+            
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle-fill"></i> <strong>注意：</strong> 导入配置会覆盖当前配置。请确保您有当前配置的备份。
+            </div>
+            
+            <form id="import-form">
+              <div class="mb-4">
+                <label for="import-file" class="form-label">选择配置文件</label>
+                <input class="form-control" type="file" id="import-file" accept=".json">
+                <div class="form-text">请选择有效的JSON格式配置文件</div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">导入选项</label>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="import-backup" checked>
+                  <label class="form-check-label" for="import-backup">
+                    导入前备份当前配置
+                  </label>
+                  <div class="form-text">在导入前自动创建当前配置的备份</div>
+                </div>
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="import-overwrite-all">
+                  <label class="form-check-label" for="import-overwrite-all">
+                    完全覆盖现有配置
+                  </label>
+                  <div class="form-text">如果不选中，仅更新配置文件中存在的设置</div>
+                </div>
+              </div>
+              
+              <div class="d-grid">
+                <button type="submit" class="btn btn-warning" id="import-btn" disabled>
+                  <i class="bi bi-upload"></i> 导入配置
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">导出/导入历史</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>时间</th>
+                <th>操作类型</th>
+                <th>管理员</th>
+                <th>内容</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody id="import-export-history">
+              <!-- 历史记录将通过JavaScript动态填充 -->
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 预览模态框 -->
+  <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="previewModalLabel">导入预览</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            以下是导入文件的内容预览。请确认配置内容无误后继续。
+          </div>
+          <pre class="config-preview p-3 border rounded bg-light" id="config-preview-content"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-warning" id="confirm-import-btn">确认导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 导出表单事件
+      const exportForm = document.getElementById('export-form');
+      const exportAllCheckbox = document.getElementById('export-all');
+      const configCheckboxes = document.querySelectorAll('.config-check');
+      
+      // 全选/取消全选
+      exportAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        configCheckboxes.forEach(checkbox => {
+          checkbox.checked = isChecked;
+          checkbox.disabled = isChecked;
+        });
+      });
+      
+      // 单个配置选择变化时检查状态
+      configCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          // 如果所有配置都被选中，则选中"全部"选项
+          const allChecked = Array.from(configCheckboxes).every(cb => cb.checked);
+          if (allChecked) {
+            exportAllCheckbox.checked = true;
+            configCheckboxes.forEach(cb => {
+              cb.disabled = true;
+            });
+          }
+          
+          // 如果没有配置被选中，则禁用导出按钮
+          const anyChecked = Array.from(configCheckboxes).some(cb => cb.checked);
+          document.getElementById('export-btn').disabled = !anyChecked;
+        });
+      });
+      
+      // 导出配置
+      exportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 收集选中的配置类型
+        const selectedConfigs = [];
+        if (exportAllCheckbox.checked) {
+          selectedConfigs.push('all');
+        } else {
+          configCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+              selectedConfigs.push(checkbox.id.replace('export-', ''));
+            }
+          });
+        }
+        
+        if (selectedConfigs.length === 0) {
+          showMessage('请至少选择一项配置进行导出', 'warning');
+          return;
+        }
+        
+        const includeTimestamp = document.getElementById('export-include-timestamp').checked;
+        
+        // 导出配置
+        fetch('/admin/config/export', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            configs: selectedConfigs,
+            includeTimestamp: includeTimestamp
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('导出请求失败');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          // 创建下载链接
+          const date = new Date();
+          const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+          const fileName = includeTimestamp 
+            ? `contentai-config-${timestamp}.json` 
+            : 'contentai-config.json';
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          showMessage('配置已成功导出', 'success');
+          
+          // 刷新历史记录
+          fetchImportExportHistory();
+        })
+        .catch(error => {
+          console.error('导出配置时出错:', error);
+          showMessage('导出配置失败', 'danger');
+        });
+      });
+      
+      // 导入表单事件
+      const importForm = document.getElementById('import-form');
+      const importFileInput = document.getElementById('import-file');
+      const importBtn = document.getElementById('import-btn');
+      let importConfig = null;
+      
+      // 监听文件选择
+      importFileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          importBtn.disabled = false;
+        } else {
+          importBtn.disabled = true;
+        }
+      });
+      
+      // 导入配置预览
+      importForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (importFileInput.files.length === 0) {
+          showMessage('请选择要导入的配置文件', 'warning');
+          return;
+        }
+        
+        const file = importFileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          try {
+            // 解析JSON
+            importConfig = JSON.parse(e.target.result);
+            
+            // 显示预览
+            const configPreview = document.getElementById('config-preview-content');
+            configPreview.textContent = JSON.stringify(importConfig, null, 2);
+            
+            // 显示预览模态框
+            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            previewModal.show();
+          } catch (error) {
+            console.error('解析配置文件时出错:', error);
+            showMessage('所选文件不是有效的JSON格式', 'danger');
+          }
+        };
+        
+        reader.onerror = function() {
+          showMessage('读取文件失败', 'danger');
+        };
+        
+        reader.readAsText(file);
+      });
+      
+      // 确认导入按钮
+      document.getElementById('confirm-import-btn').addEventListener('click', function() {
+        if (!importConfig) {
+          showMessage('没有有效的配置数据可导入', 'warning');
+          return;
+        }
+        
+        const backupBeforeImport = document.getElementById('import-backup').checked;
+        const overwriteAll = document.getElementById('import-overwrite-all').checked;
+        
+        // 发送导入请求
+        fetch('/admin/config/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            config: importConfig,
+            backup: backupBeforeImport,
+            overwriteAll: overwriteAll
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('配置已成功导入', 'success');
+            
+            // 关闭模态框
+            const previewModal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+            previewModal.hide();
+            
+            // 重置表单
+            importForm.reset();
+            importBtn.disabled = true;
+            
+            // 刷新历史记录
+            fetchImportExportHistory();
+            
+            // 提示用户刷新页面以应用新配置
+            setTimeout(() => {
+              if (confirm('配置已成功导入。是否刷新页面以应用新配置？')) {
+                window.location.reload();
+              }
+            }, 500);
+          } else {
+            showMessage('导入配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('导入配置时出错:', error);
+          showMessage('导入配置时发生错误', 'danger');
+        });
+      });
+      
+      // 获取导入/导出历史
+      function fetchImportExportHistory() {
+        const historyTableBody = document.getElementById('import-export-history');
+        
+        fetch('/admin/config/import-export/history')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              if (data.history.length === 0) {
+                historyTableBody.innerHTML = `
+                  <tr>
+                    <td colspan="5" class="text-center py-3">
+                      暂无导入/导出记录
+                    </td>
+                  </tr>
+                `;
+                return;
+              }
+              
+              historyTableBody.innerHTML = data.history.map(item => {
+                const date = new Date(item.timestamp);
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                // 操作类型徽章
+                let operationBadge = '';
+                if (item.operationType === 'export') {
+                  operationBadge = '<span class="badge bg-primary">导出</span>';
+                } else if (item.operationType === 'import') {
+                  operationBadge = '<span class="badge bg-warning">导入</span>';
+                }
+                
+                // 状态徽章
+                let statusBadge = '';
+                if (item.status === 'success') {
+                  statusBadge = '<span class="badge bg-success">成功</span>';
+                } else if (item.status === 'error') {
+                  statusBadge = '<span class="badge bg-danger">失败</span>';
+                } else {
+                  statusBadge = '<span class="badge bg-secondary">未知</span>';
+                }
+                
+                return `
+                  <tr>
+                    <td>${formattedDate}</td>
+                    <td>${operationBadge}</td>
+                    <td>${item.adminUser || '系统'}</td>
+                    <td>${item.details || '-'}</td>
+                    <td>${statusBadge}</td>
+                  </tr>
+                `;
+              }).join('');
+            } else {
+              historyTableBody.innerHTML = `
+                <tr>
+                  <td colspan="5" class="text-center py-3">
+                    <div class="alert alert-danger mb-0">加载历史记录失败</div>
+                  </td>
+                </tr>
+              `;
+            }
+          })
+          .catch(error => {
+            console.error('获取导入/导出历史时出错:', error);
+            historyTableBody.innerHTML = `
+              <tr>
+                <td colspan="5" class="text-center py-3">
+                  <div class="alert alert-danger mb-0">加载历史记录失败</div>
+                </td>
+              </tr>
+            `;
+          });
+      }
+      
+      // 初始化页面
+      fetchImportExportHistory();
+    });
+  </script>
+</div> 

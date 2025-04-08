@@ -1,0 +1,314 @@
+<!-- 用户反馈配置页面 -->
+<div class="tab-pane fade" id="feedback-config" role="tabpanel" aria-labelledby="feedback-config-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-chat-left-text"></i> 用户反馈配置</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 此页面用于配置用户反馈相关选项，包括反馈表单、数据收集和展示方式。
+    </div>
+    
+    <form id="feedback-config-form" class="config-form needs-validation" novalidate>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">基本设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-check form-switch mb-4">
+                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" <%= config.feedback.enabled ? 'checked' : '' %>>
+                <label class="form-check-label" for="enabled">启用用户反馈</label>
+                <div class="form-text">开启或关闭系统的用户反馈功能</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="feedbackFormUrl" class="form-label">反馈表单URL</label>
+                <input type="url" class="form-control" id="feedbackFormUrl" name="feedbackFormUrl" value="<%= config.feedback.feedbackFormUrl %>" <%= config.feedback.enabled ? 'required' : '' %>>
+                <div class="form-text">外部反馈表单的URL，留空则使用内置表单</div>
+                <div class="invalid-feedback">请输入有效的URL</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="emailAddress" class="form-label">反馈邮箱地址</label>
+                <input type="email" class="form-control" id="emailAddress" name="emailAddress" value="<%= config.feedback.emailAddress || '' %>">
+                <div class="form-text">接收用户反馈的邮箱地址</div>
+                <div class="invalid-feedback">请输入有效的邮箱地址</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">数据收集设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="collectAnonymousData" name="collectAnonymousData" <%= config.feedback.collectAnonymousData ? 'checked' : '' %>>
+                <label class="form-check-label" for="collectAnonymousData">收集匿名数据</label>
+                <div class="form-text">收集关于用户使用情况的匿名数据</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="collectSearchData" name="collectSearchData" <%= config.feedback.collectSearchData ? 'checked' : '' %>>
+                <label class="form-check-label" for="collectSearchData">收集搜索数据</label>
+                <div class="form-text">收集用户搜索关键词和点击数据</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="collectBrowserInfo" name="collectBrowserInfo" <%= config.feedback.collectBrowserInfo ? 'checked' : '' %>>
+                <label class="form-check-label" for="collectBrowserInfo">收集浏览器信息</label>
+                <div class="form-text">收集用户的浏览器类型和版本信息</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="dataRetentionDays" class="form-label">数据保留天数</label>
+                <input type="number" class="form-control" id="dataRetentionDays" name="dataRetentionDays" min="1" max="365" value="<%= config.feedback.dataRetentionDays || 30 %>" required>
+                <div class="form-text">用户反馈数据的保存天数</div>
+                <div class="invalid-feedback">请输入1-365之间的有效数字</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">反馈表单设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="feedbackTitle" class="form-label">反馈表单标题</label>
+                <input type="text" class="form-control" id="feedbackTitle" name="feedbackTitle" value="<%= config.feedback.feedbackTitle || '我们希望听到您的声音' %>">
+                <div class="form-text">反馈表单的标题文字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="feedbackDescription" class="form-label">反馈表单描述</label>
+                <textarea class="form-control" id="feedbackDescription" name="feedbackDescription" rows="2"><%= config.feedback.feedbackDescription || '您的反馈对我们非常重要，它将帮助我们改进我们的服务。' %></textarea>
+                <div class="form-text">反馈表单的介绍文字</div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">启用的反馈类型</label>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="enableBugReports" name="enableBugReports" <%= config.feedback.enableBugReports !== false ? 'checked' : '' %>>
+                      <label class="form-check-label" for="enableBugReports">问题报告</label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="enableFeatureRequests" name="enableFeatureRequests" <%= config.feedback.enableFeatureRequests !== false ? 'checked' : '' %>>
+                      <label class="form-check-label" for="enableFeatureRequests">功能建议</label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="enableGeneralFeedback" name="enableGeneralFeedback" <%= config.feedback.enableGeneralFeedback !== false ? 'checked' : '' %>>
+                      <label class="form-check-label" for="enableGeneralFeedback">一般反馈</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">要求填写的字段</label>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="requireEmail" name="requireEmail" <%= config.feedback.requireEmail ? 'checked' : '' %>>
+                      <label class="form-check-label" for="requireEmail">电子邮箱</label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="requireDescription" name="requireDescription" <%= config.feedback.requireDescription !== false ? 'checked' : '' %>>
+                      <label class="form-check-label" for="requireDescription">问题描述</label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="requireCategory" name="requireCategory" <%= config.feedback.requireCategory ? 'checked' : '' %>>
+                      <label class="form-check-label" for="requireCategory">问题类别</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="customFields" class="form-label">自定义字段（JSON格式）</label>
+                <textarea class="form-control" id="customFields" name="customFields" rows="3"><%= JSON.stringify(config.feedback.customFields || [], null, 2) %></textarea>
+                <div class="form-text">自定义反馈表单字段，格式: [{"name": "field1", "label": "标签1", "type": "text", "required": true}]</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="allowAttachments" name="allowAttachments" <%= config.feedback.allowAttachments ? 'checked' : '' %>>
+                <label class="form-check-label" for="allowAttachments">允许附件上传</label>
+                <div class="form-text">允许用户在反馈中上传图片或文件附件</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">通知设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableEmailNotifications" name="enableEmailNotifications" <%= config.feedback.enableEmailNotifications ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableEmailNotifications">启用电子邮件通知</label>
+                <div class="form-text">收到新的用户反馈时发送电子邮件通知</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="notificationRecipients" class="form-label">通知接收者</label>
+                <input type="text" class="form-control" id="notificationRecipients" name="notificationRecipients" value="<%= config.feedback.notificationRecipients || '' %>">
+                <div class="form-text">接收通知的电子邮箱地址，多个地址用逗号分隔</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="sendThankYouEmails" name="sendThankYouEmails" <%= config.feedback.sendThankYouEmails ? 'checked' : '' %>>
+                <label class="form-check-label" for="sendThankYouEmails">发送感谢邮件</label>
+                <div class="form-text">向提交反馈的用户自动发送感谢邮件</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="reset-feedback-config">
+          <i class="bi bi-arrow-counterclockwise"></i> 重置为默认
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> 保存配置
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 表单提交
+      const feedbackConfigForm = document.getElementById('feedback-config-form');
+      feedbackConfigForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (!feedbackConfigForm.checkValidity()) {
+          event.stopPropagation();
+          feedbackConfigForm.classList.add('was-validated');
+          return;
+        }
+        
+        // 收集表单数据
+        const formData = new FormData(feedbackConfigForm);
+        
+        // 解析自定义字段JSON
+        let customFields = [];
+        try {
+          customFields = JSON.parse(formData.get('customFields') || '[]');
+        } catch (error) {
+          showMessage('自定义字段JSON格式错误', 'danger');
+          return;
+        }
+        
+        const feedbackConfig = {
+          enabled: formData.get('enabled') === 'on',
+          feedbackFormUrl: formData.get('feedbackFormUrl'),
+          emailAddress: formData.get('emailAddress'),
+          collectAnonymousData: formData.get('collectAnonymousData') === 'on',
+          collectSearchData: formData.get('collectSearchData') === 'on',
+          collectBrowserInfo: formData.get('collectBrowserInfo') === 'on',
+          dataRetentionDays: parseInt(formData.get('dataRetentionDays')),
+          feedbackTitle: formData.get('feedbackTitle'),
+          feedbackDescription: formData.get('feedbackDescription'),
+          enableBugReports: formData.get('enableBugReports') === 'on',
+          enableFeatureRequests: formData.get('enableFeatureRequests') === 'on',
+          enableGeneralFeedback: formData.get('enableGeneralFeedback') === 'on',
+          requireEmail: formData.get('requireEmail') === 'on',
+          requireDescription: formData.get('requireDescription') === 'on',
+          requireCategory: formData.get('requireCategory') === 'on',
+          customFields: customFields,
+          allowAttachments: formData.get('allowAttachments') === 'on',
+          enableEmailNotifications: formData.get('enableEmailNotifications') === 'on',
+          notificationRecipients: formData.get('notificationRecipients'),
+          sendThankYouEmails: formData.get('sendThankYouEmails') === 'on'
+        };
+        
+        // 发送配置到服务器
+        fetch('/admin/config/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(feedbackConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('用户反馈配置已成功保存', 'success');
+          } else {
+            showMessage('保存用户反馈配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('保存用户反馈配置时出错:', error);
+          showMessage('保存用户反馈配置时发生错误', 'danger');
+        });
+      });
+      
+      // 重置配置按钮
+      document.getElementById('reset-feedback-config').addEventListener('click', function() {
+        if (confirm('确定要重置所有用户反馈配置为默认值吗？此操作不可撤销。')) {
+          fetch('/admin/config/feedback/reset', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('用户反馈配置已重置为默认值', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showMessage('重置用户反馈配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('重置用户反馈配置时出错:', error);
+            showMessage('重置用户反馈配置时发生错误', 'danger');
+          });
+        }
+      });
+      
+      // 启用/禁用反馈表单字段
+      document.getElementById('enabled').addEventListener('change', function() {
+        const enabled = this.checked;
+        document.getElementById('feedbackFormUrl').required = enabled;
+        
+        // 更新视觉反馈
+        if (!enabled) {
+          const formAlert = document.createElement('div');
+          formAlert.classList.add('alert', 'alert-warning', 'mt-3');
+          formAlert.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> 用户反馈功能当前已禁用。';
+          
+          const existingAlert = document.querySelector('#feedback-config-form .alert-warning');
+          if (!existingAlert) {
+            document.getElementById('feedback-config-form').prepend(formAlert);
+          }
+        } else {
+          const existingAlert = document.querySelector('#feedback-config-form .alert-warning');
+          if (existingAlert) {
+            existingAlert.remove();
+          }
+        }
+      });
+      
+      // 初始触发一次启用/禁用事件
+      const enabledCheckbox = document.getElementById('enabled');
+      if (enabledCheckbox) {
+        const event = new Event('change');
+        enabledCheckbox.dispatchEvent(event);
+      }
+    });
+  </script>
+</div> 

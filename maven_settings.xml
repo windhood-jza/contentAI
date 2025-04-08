@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <!-- 阿里云Maven镜像 -->
+        <mirror>
+            <id>aliyun</id>
+            <mirrorOf>central</mirrorOf>
+            <name>阿里云公共仓库</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+        <!-- 阿里云Spring镜像 -->
+        <mirror>
+            <id>aliyun-spring</id>
+            <mirrorOf>spring</mirrorOf>
+            <name>阿里云Spring仓库</name>
+            <url>https://maven.aliyun.com/repository/spring</url>
+        </mirror>
+        <!-- 阿里云Spring插件镜像 -->
+        <mirror>
+            <id>aliyun-spring-plugin</id>
+            <mirrorOf>spring-plugin</mirrorOf>
+            <name>阿里云Spring插件仓库</name>
+            <url>https://maven.aliyun.com/repository/spring-plugin</url>
+        </mirror>
+    </mirrors>
+    <profiles>
+        <profile>
+            <id>aliyun</id>
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>central</id>
+                    <url>https://maven.aliyun.com/repository/public</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>aliyun</activeProfile>
+    </activeProfiles>
+</settings> 

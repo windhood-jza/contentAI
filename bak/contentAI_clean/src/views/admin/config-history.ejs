@@ -1,0 +1,456 @@
+<!-- 配置历史页面 -->
+<div class="tab-pane fade" id="config-history" role="tabpanel" aria-labelledby="config-history-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-clock-history"></i> 配置历史</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 此页面显示系统配置的历史记录，您可以查看之前的配置更改并在需要时恢复。
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">配置变更历史</h5>
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
+            <i class="bi bi-arrow-clockwise"></i> 刷新
+          </button>
+          <div class="dropdown d-inline-block ms-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="historyFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-funnel"></i> 筛选
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="historyFilterDropdown">
+              <li><a class="dropdown-item filter-item" data-filter="all" href="#">所有配置</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item filter-item" data-filter="api" href="#">API配置</a></li>
+              <li><a class="dropdown-item filter-item" data-filter="search" href="#">搜索配置</a></li>
+              <li><a class="dropdown-item filter-item" data-filter="ui" href="#">UI配置</a></li>
+              <li><a class="dropdown-item filter-item" data-filter="cache" href="#">缓存配置</a></li>
+              <li><a class="dropdown-item filter-item" data-filter="performance" href="#">性能配置</a></li>
+              <li><a class="dropdown-item filter-item" data-filter="feedback" href="#">反馈配置</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover config-history-table mb-0">
+            <thead class="table-light">
+              <tr>
+                <th width="18%">时间</th>
+                <th width="15%">管理员</th>
+                <th width="15%">配置类型</th>
+                <th width="32%">变更摘要</th>
+                <th width="20%" class="text-end">操作</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- 历史记录将通过JavaScript动态填充 -->
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white">
+        <nav aria-label="历史分页" class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small" id="history-count">显示 0 个记录</span>
+          <ul class="pagination pagination-sm mb-0" id="history-pagination">
+            <!-- 分页控件将通过JavaScript动态填充 -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+    
+    <!-- 配置对比模态框 -->
+    <div class="modal fade" id="compareModal" tabindex="-1" aria-labelledby="compareModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="compareModalLabel">配置对比</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card h-100">
+                  <div class="card-header bg-light">
+                    <h6 class="mb-0" id="previous-config-title">之前的配置</h6>
+                    <small class="text-muted" id="previous-config-time"></small>
+                  </div>
+                  <div class="card-body p-0">
+                    <pre class="m-0 p-3 h-100 config-json" id="previous-config-json"></pre>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100">
+                  <div class="card-header bg-light">
+                    <h6 class="mb-0" id="current-config-title">当前的配置</h6>
+                    <small class="text-muted" id="current-config-time"></small>
+                  </div>
+                  <div class="card-body p-0">
+                    <pre class="m-0 p-3 h-100 config-json" id="current-config-json"></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            <button type="button" class="btn btn-warning" id="restore-config-btn">恢复此配置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 状态变量
+      let currentPage = 1;
+      let currentFilter = 'all';
+      let currentHistoryId = null;
+      const itemsPerPage = 10;
+      
+      // 获取配置历史
+      function fetchConfigHistory(page = 1, filter = 'all') {
+        currentPage = page;
+        currentFilter = filter;
+        
+        const historyTableBody = document.getElementById('history-table-body');
+        historyTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+        
+        fetch(`/admin/config/history/data?page=${page}&limit=${itemsPerPage}&filter=${filter}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              renderHistoryTable(data.history, data.total);
+            } else {
+              showMessage('获取配置历史失败: ' + data.error, 'danger');
+              historyTableBody.innerHTML = `
+                <tr>
+                  <td colspan="5" class="text-center py-4">
+                    <div class="alert alert-danger mb-0">加载配置历史失败</div>
+                  </td>
+                </tr>
+              `;
+            }
+          })
+          .catch(error => {
+            console.error('获取配置历史时出错:', error);
+            showMessage('获取配置历史时发生错误', 'danger');
+            historyTableBody.innerHTML = `
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <div class="alert alert-danger mb-0">加载配置历史失败</div>
+                </td>
+              </tr>
+            `;
+          });
+      }
+      
+      // 渲染历史表格
+      function renderHistoryTable(historyItems, totalItems) {
+        const historyTableBody = document.getElementById('history-table-body');
+        const historyCount = document.getElementById('history-count');
+        const historyPagination = document.getElementById('history-pagination');
+        
+        if (historyItems.length === 0) {
+          historyTableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                <div class="alert alert-info mb-0">没有找到配置历史记录</div>
+              </td>
+            </tr>
+          `;
+          historyCount.textContent = '显示 0 个记录';
+          historyPagination.innerHTML = '';
+          return;
+        }
+        
+        // 更新表格内容
+        historyTableBody.innerHTML = historyItems.map(item => {
+          const date = new Date(item.timestamp);
+          const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+          
+          // 获取配置类型的中文名称
+          const configTypeMap = {
+            'api': 'API配置',
+            'search': '搜索配置',
+            'ui': 'UI配置',
+            'cache': '缓存配置',
+            'performance': '性能配置',
+            'feedback': '反馈配置'
+          };
+          
+          const configTypeName = configTypeMap[item.configType] || item.configType;
+          
+          return `
+            <tr data-history-id="${item.id}">
+              <td>${formattedDate}</td>
+              <td>${item.adminUser || '系统'}</td>
+              <td><span class="badge bg-${getConfigTypeBadgeColor(item.configType)}">${configTypeName}</span></td>
+              <td>${item.changeSummary || '更新配置'}</td>
+              <td class="text-end">
+                <button type="button" class="btn btn-sm btn-outline-info view-details-btn" data-history-id="${item.id}">
+                  <i class="bi bi-eye"></i> 查看
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning restore-btn" data-history-id="${item.id}">
+                  <i class="bi bi-arrow-counterclockwise"></i> 恢复
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        // 更新记录计数
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(startItem + historyItems.length - 1, totalItems);
+        historyCount.textContent = `显示 ${startItem} - ${endItem} 共 ${totalItems} 条记录`;
+        
+        // 更新分页
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        updatePagination(totalPages);
+        
+        // 添加按钮事件监听器
+        addHistoryButtonListeners();
+      }
+      
+      // 获取配置类型的徽章颜色
+      function getConfigTypeBadgeColor(configType) {
+        const colorMap = {
+          'api': 'primary',
+          'search': 'success',
+          'ui': 'info',
+          'cache': 'warning',
+          'performance': 'danger',
+          'feedback': 'secondary'
+        };
+        
+        return colorMap[configType] || 'dark';
+      }
+      
+      // 更新分页控件
+      function updatePagination(totalPages) {
+        const paginationEl = document.getElementById('history-pagination');
+        let paginationHTML = '';
+        
+        // 上一页按钮
+        paginationHTML += `
+          <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="上一页">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+        `;
+        
+        // 页码按钮
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, startPage + 4);
+        
+        for (let i = startPage; i <= endPage; i++) {
+          paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+              <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+          `;
+        }
+        
+        // 下一页按钮
+        paginationHTML += `
+          <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="下一页">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        `;
+        
+        paginationEl.innerHTML = paginationHTML;
+        
+        // 添加分页事件
+        document.querySelectorAll('#history-pagination .page-link').forEach(item => {
+          item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.getAttribute('data-page'));
+            if (!isNaN(page) && page !== currentPage) {
+              fetchConfigHistory(page, currentFilter);
+            }
+          });
+        });
+      }
+      
+      // 添加历史按钮事件监听器
+      function addHistoryButtonListeners() {
+        // 查看详情按钮
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const historyId = this.getAttribute('data-history-id');
+            viewConfigDetails(historyId);
+          });
+        });
+        
+        // 恢复按钮
+        document.querySelectorAll('.restore-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const historyId = this.getAttribute('data-history-id');
+            if (confirm('确定要恢复此配置吗？这将覆盖当前配置。')) {
+              restoreConfig(historyId);
+            }
+          });
+        });
+      }
+      
+      // 查看配置详情
+      function viewConfigDetails(historyId) {
+        fetch(`/admin/config/history/${historyId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showCompareModal(data.historyItem);
+            } else {
+              showMessage('获取配置详情失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('获取配置详情时出错:', error);
+            showMessage('获取配置详情时发生错误', 'danger');
+          });
+      }
+      
+      // 显示配置对比模态框
+      function showCompareModal(historyItem) {
+        currentHistoryId = historyItem.id;
+        
+        // 设置模态框标题
+        document.getElementById('compareModalLabel').textContent = 
+          `配置对比 - ${getConfigTypeName(historyItem.configType)}`;
+        
+        // 设置之前的配置
+        const previousDate = new Date(historyItem.timestamp);
+        document.getElementById('previous-config-title').textContent = 
+          `历史配置 (ID: ${historyItem.id})`;
+        document.getElementById('previous-config-time').textContent = 
+          previousDate.toLocaleString('zh-CN');
+        
+        // 格式化并显示JSON
+        const previousConfigJson = document.getElementById('previous-config-json');
+        previousConfigJson.textContent = JSON.stringify(historyItem.configData, null, 2);
+        
+        // 设置当前的配置
+        const currentDate = new Date();
+        document.getElementById('current-config-title').textContent = '当前配置';
+        document.getElementById('current-config-time').textContent = 
+          currentDate.toLocaleString('zh-CN');
+        
+        // 获取当前配置
+        fetch(`/admin/config/${historyItem.configType}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              const currentConfigJson = document.getElementById('current-config-json');
+              currentConfigJson.textContent = JSON.stringify(data.config, null, 2);
+              
+              // 高亮显示差异
+              highlightDifferences();
+            } else {
+              document.getElementById('current-config-json').textContent = 
+                '获取当前配置失败: ' + data.error;
+            }
+          })
+          .catch(error => {
+            console.error('获取当前配置时出错:', error);
+            document.getElementById('current-config-json').textContent = 
+              '获取当前配置时发生错误';
+          });
+        
+        // 显示模态框
+        const compareModal = new bootstrap.Modal(document.getElementById('compareModal'));
+        compareModal.show();
+      }
+      
+      // 获取配置类型名称
+      function getConfigTypeName(configType) {
+        const configTypeMap = {
+          'api': 'API配置',
+          'search': '搜索配置',
+          'ui': 'UI配置',
+          'cache': '缓存配置',
+          'performance': '性能配置',
+          'feedback': '反馈配置'
+        };
+        
+        return configTypeMap[configType] || configType;
+      }
+      
+      // 高亮显示差异
+      function highlightDifferences() {
+        // 此功能可以使用第三方库实现，如jsondiffpatch
+        // 这里只是一个简单的占位实现
+        console.log('高亮差异功能尚未实现');
+      }
+      
+      // 恢复配置
+      function restoreConfig(historyId) {
+        fetch(`/admin/config/history/${historyId}/restore`, {
+          method: 'POST'
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('配置已成功恢复', 'success');
+              // 重新加载历史
+              fetchConfigHistory(currentPage, currentFilter);
+            } else {
+              showMessage('恢复配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('恢复配置时出错:', error);
+            showMessage('恢复配置时发生错误', 'danger');
+          });
+      }
+      
+      // 刷新按钮点击事件
+      document.getElementById('refresh-history').addEventListener('click', function() {
+        fetchConfigHistory(currentPage, currentFilter);
+      });
+      
+      // 筛选下拉菜单点击事件
+      document.querySelectorAll('.filter-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          const filter = this.getAttribute('data-filter');
+          document.getElementById('historyFilterDropdown').innerHTML = 
+            `<i class="bi bi-funnel"></i> ${this.textContent}`;
+          fetchConfigHistory(1, filter);
+        });
+      });
+      
+      // 模态框中的恢复按钮点击事件
+      document.getElementById('restore-config-btn').addEventListener('click', function() {
+        if (currentHistoryId && confirm('确定要恢复此配置吗？这将覆盖当前配置。')) {
+          restoreConfig(currentHistoryId);
+          const compareModal = bootstrap.Modal.getInstance(document.getElementById('compareModal'));
+          compareModal.hide();
+        }
+      });
+      
+      // 初始化加载历史
+      fetchConfigHistory();
+    });
+  </script>
+</div> 

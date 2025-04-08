@@ -1,0 +1,248 @@
+<!-- UI配置页面 -->
+<div class="tab-pane fade" id="ui-config" role="tabpanel" aria-labelledby="ui-config-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-palette"></i> 界面配置</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 在此页面中，您可以自定义应用的外观和用户界面行为。
+    </div>
+    
+    <form id="ui-config-form" class="config-form needs-validation" novalidate>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">外观配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="theme" class="form-label">主题</label>
+                <select class="form-select" id="theme" name="theme" required>
+                  <option value="light" <%= config.ui.theme === 'light' ? 'selected' : '' %>>明亮主题</option>
+                  <option value="dark" <%= config.ui.theme === 'dark' ? 'selected' : '' %>>暗黑主题</option>
+                  <option value="auto" <%= config.ui.theme === 'auto' ? 'selected' : '' %>>跟随系统</option>
+                </select>
+                <div class="form-text">网站整体颜色主题</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="primaryColor" class="form-label">主色调</label>
+                <input type="color" class="form-control form-control-color" id="primaryColor" name="primaryColor" value="<%= config.ui.primaryColor || '#0d6efd' %>" title="选择主色调">
+                <div class="form-text">网站的主要颜色</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="fontSize" class="form-label">字体大小</label>
+                <select class="form-select" id="fontSize" name="fontSize" required>
+                  <option value="small" <%= config.ui.fontSize === 'small' ? 'selected' : '' %>>小</option>
+                  <option value="medium" <%= config.ui.fontSize === 'medium' ? 'selected' : '' %>>中</option>
+                  <option value="large" <%= config.ui.fontSize === 'large' ? 'selected' : '' %>>大</option>
+                </select>
+                <div class="form-text">网站的默认字体大小</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="fontFamily" class="form-label">字体族</label>
+                <select class="form-select" id="fontFamily" name="fontFamily" required>
+                  <option value="system" <%= (config.ui.fontFamily === 'system' || !config.ui.fontFamily) ? 'selected' : '' %>>系统默认</option>
+                  <option value="serif" <%= config.ui.fontFamily === 'serif' ? 'selected' : '' %>>衬线字体</option>
+                  <option value="sans-serif" <%= config.ui.fontFamily === 'sans-serif' ? 'selected' : '' %>>无衬线字体</option>
+                  <option value="monospace" <%= config.ui.fontFamily === 'monospace' ? 'selected' : '' %>>等宽字体</option>
+                </select>
+                <div class="form-text">网站使用的字体族</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">内容展示配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="contentDisplayMode" class="form-label">内容显示模式</label>
+                <select class="form-select" id="contentDisplayMode" name="contentDisplayMode" required>
+                  <option value="card" <%= config.ui.contentDisplayMode === 'card' ? 'selected' : '' %>>卡片视图</option>
+                  <option value="list" <%= config.ui.contentDisplayMode === 'list' ? 'selected' : '' %>>列表视图</option>
+                  <option value="table" <%= config.ui.contentDisplayMode === 'table' ? 'selected' : '' %>>表格视图</option>
+                </select>
+                <div class="form-text">搜索结果的显示方式</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="showTimestamps" name="showTimestamps" <%= config.ui.showTimestamps ? 'checked' : '' %>>
+                <label class="form-check-label" for="showTimestamps">显示时间戳</label>
+                <div class="form-text">在搜索结果中显示内容的创建和更新时间</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="animationsEnabled" name="animationsEnabled" <%= config.ui.animationsEnabled ? 'checked' : '' %>>
+                <label class="form-check-label" for="animationsEnabled">启用动画效果</label>
+                <div class="form-text">在界面中使用过渡和动画效果</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="showPreviewImages" name="showPreviewImages" <%= config.ui.showPreviewImages ? 'checked' : '' %>>
+                <label class="form-check-label" for="showPreviewImages">显示预览图片</label>
+                <div class="form-text">在搜索结果中显示内容相关的预览图片</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">高级UI设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="pageTransitionEffect" class="form-label">页面切换效果</label>
+                  <select class="form-select" id="pageTransitionEffect" name="pageTransitionEffect">
+                    <option value="none" <%= (!config.ui.pageTransitionEffect || config.ui.pageTransitionEffect === 'none') ? 'selected' : '' %>>无</option>
+                    <option value="fade" <%= config.ui.pageTransitionEffect === 'fade' ? 'selected' : '' %>>淡入淡出</option>
+                    <option value="slide" <%= config.ui.pageTransitionEffect === 'slide' ? 'selected' : '' %>>滑动</option>
+                    <option value="zoom" <%= config.ui.pageTransitionEffect === 'zoom' ? 'selected' : '' %>>缩放</option>
+                  </select>
+                  <div class="form-text">页面切换时的过渡动画效果</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="loadingIndicatorType" class="form-label">加载指示器类型</label>
+                  <select class="form-select" id="loadingIndicatorType" name="loadingIndicatorType">
+                    <option value="spinner" <%= (!config.ui.loadingIndicatorType || config.ui.loadingIndicatorType === 'spinner') ? 'selected' : '' %>>旋转指示器</option>
+                    <option value="progress" <%= config.ui.loadingIndicatorType === 'progress' ? 'selected' : '' %>>进度条</option>
+                    <option value="skeleton" <%= config.ui.loadingIndicatorType === 'skeleton' ? 'selected' : '' %>>骨架屏</option>
+                  </select>
+                  <div class="form-text">内容加载时显示的指示器样式</div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="paginationType" class="form-label">分页控件类型</label>
+                <select class="form-select" id="paginationType" name="paginationType">
+                  <option value="numbers" <%= (!config.ui.paginationType || config.ui.paginationType === 'numbers') ? 'selected' : '' %>>数字分页</option>
+                  <option value="loadMore" <%= config.ui.paginationType === 'loadMore' ? 'selected' : '' %>">"加载更多"按钮</option>
+                  <option value="infiniteScroll" <%= config.ui.paginationType === 'infiniteScroll' ? 'selected' : '' %>>无限滚动</option>
+                </select>
+                <div class="form-text">搜索结果的分页控制方式</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableResponsiveFont" name="enableResponsiveFont" <%= config.ui.enableResponsiveFont ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableResponsiveFont">启用响应式文字大小</label>
+                <div class="form-text">根据屏幕大小自动调整文字大小</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="showScrollToTop" name="showScrollToTop" <%= config.ui.showScrollToTop ? 'checked' : '' %>>
+                <label class="form-check-label" for="showScrollToTop">显示回到顶部按钮</label>
+                <div class="form-text">在页面滚动时显示回到顶部的按钮</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="reset-ui-config">
+          <i class="bi bi-arrow-counterclockwise"></i> 重置为默认
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> 保存配置
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 表单提交
+      const uiConfigForm = document.getElementById('ui-config-form');
+      uiConfigForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (!uiConfigForm.checkValidity()) {
+          event.stopPropagation();
+          uiConfigForm.classList.add('was-validated');
+          return;
+        }
+        
+        // 收集表单数据
+        const formData = new FormData(uiConfigForm);
+        const uiConfig = {
+          theme: formData.get('theme'),
+          primaryColor: formData.get('primaryColor'),
+          fontSize: formData.get('fontSize'),
+          fontFamily: formData.get('fontFamily'),
+          contentDisplayMode: formData.get('contentDisplayMode'),
+          showTimestamps: formData.get('showTimestamps') === 'on',
+          animationsEnabled: formData.get('animationsEnabled') === 'on',
+          showPreviewImages: formData.get('showPreviewImages') === 'on',
+          pageTransitionEffect: formData.get('pageTransitionEffect'),
+          loadingIndicatorType: formData.get('loadingIndicatorType'),
+          paginationType: formData.get('paginationType'),
+          enableResponsiveFont: formData.get('enableResponsiveFont') === 'on',
+          showScrollToTop: formData.get('showScrollToTop') === 'on'
+        };
+        
+        // 发送配置到服务器
+        fetch('/admin/config/ui', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(uiConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('界面配置已成功保存', 'success');
+          } else {
+            showMessage('保存界面配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('保存界面配置时出错:', error);
+          showMessage('保存界面配置时发生错误', 'danger');
+        });
+      });
+      
+      // 重置配置按钮
+      document.getElementById('reset-ui-config').addEventListener('click', function() {
+        if (confirm('确定要重置所有界面配置为默认值吗？此操作不可撤销。')) {
+          fetch('/admin/config/ui/reset', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('界面配置已重置为默认值', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showMessage('重置界面配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('重置界面配置时出错:', error);
+            showMessage('重置界面配置时发生错误', 'danger');
+          });
+        }
+      });
+      
+      // 主题预览功能
+      const themeSelect = document.getElementById('theme');
+      themeSelect.addEventListener('change', function() {
+        // 这里可以添加主题预览的代码
+        showMessage(`已选择 ${themeSelect.options[themeSelect.selectedIndex].text} 主题，保存设置后生效`, 'info');
+      });
+    });
+  </script>
+</div> 

@@ -1,0 +1,7 @@
+# 数据源配置
+db.type=mysql
+db.host=localhost
+db.port=3306
+db.name=test
+db.username=test
+db.password=****** 

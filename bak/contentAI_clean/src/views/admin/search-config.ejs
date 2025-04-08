@@ -1,0 +1,204 @@
+<!-- 搜索配置页面 -->
+<div class="tab-pane fade" id="search-config" role="tabpanel" aria-labelledby="search-config-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-search"></i> 搜索配置</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 此页面用于配置搜索相关参数，影响搜索结果的展示方式和性能。
+    </div>
+    
+    <form id="search-config-form" class="config-form needs-validation" novalidate>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">基本搜索配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="defaultPageSize" class="form-label">默认每页结果数</label>
+                <input type="number" class="form-control" id="defaultPageSize" name="defaultPageSize" min="1" max="100" value="<%= config.search.defaultPageSize %>" required>
+                <div class="form-text">搜索结果页面默认显示的结果数量</div>
+                <div class="invalid-feedback">请输入1-100之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="maxKeywordLength" class="form-label">最大关键词长度</label>
+                <input type="number" class="form-control" id="maxKeywordLength" name="maxKeywordLength" min="10" max="500" value="<%= config.search.maxKeywordLength %>" required>
+                <div class="form-text">允许用户输入的关键词最大长度</div>
+                <div class="invalid-feedback">请输入10-500之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="defaultSort" class="form-label">默认排序方式</label>
+                <select class="form-select" id="defaultSort" name="defaultSort" required>
+                  <option value="created,desc" <%= config.search.defaultSort === 'created,desc' ? 'selected' : '' %>>时间降序（新→旧）</option>
+                  <option value="created,asc" <%= config.search.defaultSort === 'created,asc' ? 'selected' : '' %>>时间升序（旧→新）</option>
+                  <option value="relevance,desc" <%= config.search.defaultSort === 'relevance,desc' ? 'selected' : '' %>>相关性降序</option>
+                </select>
+                <div class="form-text">搜索结果的默认排序方式</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">结果展示配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="truncateContentLength" class="form-label">内容截断长度</label>
+                <input type="number" class="form-control" id="truncateContentLength" name="truncateContentLength" min="50" max="2000" value="<%= config.search.truncateContentLength %>" required>
+                <div class="form-text">搜索结果列表中显示的最大内容长度</div>
+                <div class="invalid-feedback">请输入50-2000之间的有效数字</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="highlightResults" name="highlightResults" <%= config.search.highlightResults ? 'checked' : '' %>>
+                <label class="form-check-label" for="highlightResults">高亮搜索关键词</label>
+                <div class="form-text">在搜索结果内容中高亮显示匹配的关键词</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="showSnippets" name="showSnippets" <%= config.search.showSnippets ? 'checked' : '' %>>
+                <label class="form-check-label" for="showSnippets">显示内容摘要</label>
+                <div class="form-text">在搜索结果中显示内容摘要，而不是完整内容</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">高级搜索选项</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="minKeywordLength" class="form-label">最小关键词长度</label>
+                  <input type="number" class="form-control" id="minKeywordLength" name="minKeywordLength" min="1" max="10" value="<%= config.search.minKeywordLength || 1 %>" required>
+                  <div class="form-text">允许搜索的最小关键词长度</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="maxResults" class="form-label">最大结果数量</label>
+                  <input type="number" class="form-control" id="maxResults" name="maxResults" min="10" max="1000" value="<%= config.search.maxResults || 100 %>" required>
+                  <div class="form-text">单次搜索允许返回的最大结果数量</div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="searchFields" class="form-label">搜索字段</label>
+                <input type="text" class="form-control" id="searchFields" name="searchFields" value="<%= config.search.searchFields || 'title,content,author' %>" required>
+                <div class="form-text">要搜索的字段，用逗号分隔</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableFuzzySearch" name="enableFuzzySearch" <%= config.search.enableFuzzySearch ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableFuzzySearch">启用模糊搜索</label>
+                <div class="form-text">允许关键词与内容不完全匹配的模糊搜索</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableAdvancedFilters" name="enableAdvancedFilters" <%= config.search.enableAdvancedFilters ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableAdvancedFilters">启用高级过滤器</label>
+                <div class="form-text">允许用户使用高级过滤选项（日期范围、来源等）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="reset-search-config">
+          <i class="bi bi-arrow-counterclockwise"></i> 重置为默认
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> 保存配置
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 表单提交
+      const searchConfigForm = document.getElementById('search-config-form');
+      searchConfigForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (!searchConfigForm.checkValidity()) {
+          event.stopPropagation();
+          searchConfigForm.classList.add('was-validated');
+          return;
+        }
+        
+        // 收集表单数据
+        const formData = new FormData(searchConfigForm);
+        const searchConfig = {
+          defaultPageSize: parseInt(formData.get('defaultPageSize')),
+          maxKeywordLength: parseInt(formData.get('maxKeywordLength')),
+          defaultSort: formData.get('defaultSort'),
+          truncateContentLength: parseInt(formData.get('truncateContentLength')),
+          highlightResults: formData.get('highlightResults') === 'on',
+          showSnippets: formData.get('showSnippets') === 'on',
+          minKeywordLength: parseInt(formData.get('minKeywordLength')),
+          maxResults: parseInt(formData.get('maxResults')),
+          searchFields: formData.get('searchFields'),
+          enableFuzzySearch: formData.get('enableFuzzySearch') === 'on',
+          enableAdvancedFilters: formData.get('enableAdvancedFilters') === 'on'
+        };
+        
+        // 发送配置到服务器
+        fetch('/admin/config/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(searchConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('搜索配置已成功保存', 'success');
+          } else {
+            showMessage('保存搜索配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('保存搜索配置时出错:', error);
+          showMessage('保存搜索配置时发生错误', 'danger');
+        });
+      });
+      
+      // 重置配置按钮
+      document.getElementById('reset-search-config').addEventListener('click', function() {
+        if (confirm('确定要重置所有搜索配置为默认值吗？此操作不可撤销。')) {
+          fetch('/admin/config/search/reset', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('搜索配置已重置为默认值', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showMessage('重置搜索配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('重置搜索配置时出错:', error);
+            showMessage('重置搜索配置时发生错误', 'danger');
+          });
+        }
+      });
+    });
+  </script>
+</div> 

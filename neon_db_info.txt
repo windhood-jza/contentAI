@@ -1,0 +1,20 @@
+# Neon数据库连接信息
+
+## 数据库连接详情
+- 数据库类型：PostgreSQL
+- 主机地址：ep-polished-dust-a5cndckv-pooler.us-east-2.aws.neon.tech
+- 端口：5432
+- 数据库名：test
+- 用户名：neondb_owner
+- 密码：npg_dZ5Cu8MqIDGe
+- 连接参数：sslmode=require
+
+## 连接字符串
+```
+postgresql://neondb_owner:npg_dZ5Cu8MqIDGe@ep-polished-dust-a5cndckv-pooler.us-east-2.aws.neon.tech/test?sslmode=require
+```
+
+## 注意事项
+- 此文件仅用于记录，不会被应用程序读取
+- 请妥善保管数据库密码信息
+- Neon控制台访问地址：https://console.neon.tech 

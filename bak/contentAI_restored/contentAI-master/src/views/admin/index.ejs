@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/css/admin.css" rel="stylesheet">
+  <style>
+    .sidebar {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      padding: 48px 0 0;
+      box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+    
+    .sidebar-sticky {
+      position: relative;
+      top: 0;
+      height: calc(100vh - 48px);
+      padding-top: 0.5rem;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    
+    .nav-link {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .nav-link.active {
+      color: #0d6efd;
+    }
+    
+    .navbar-brand {
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      font-size: 1rem;
+      background-color: rgba(0, 0, 0, .25);
+      box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+    }
+    
+    .form-control-dark {
+      color: #fff;
+      background-color: rgba(255, 255, 255, .1);
+      border-color: rgba(255, 255, 255, .1);
+    }
+    
+    main {
+      padding-top: 50px;
+    }
+    
+    .tab-content {
+      padding: 20px 0;
+    }
+    
+    .config-section {
+      margin-bottom: 2rem;
+    }
+    
+    .config-form {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 0.375rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .config-history-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="/admin">ContentAI 管理面板</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="w-100"></div>
+    
+    <div class="navbar-nav">
+      <div class="nav-item text-nowrap">
+        <a class="nav-link px-3" href="/admin/logout">登出</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container-fluid">
+    <div class="row">
+      <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <div class="position-sticky sidebar-sticky">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link active" href="#dashboard" data-bs-toggle="tab">
+                <i class="bi bi-speedometer2 me-2"></i>
+                控制面板
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#api-config" data-bs-toggle="tab">
+                <i class="bi bi-cloud me-2"></i>
+                API 配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#search-config" data-bs-toggle="tab">
+                <i class="bi bi-search me-2"></i>
+                搜索配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#ui-config" data-bs-toggle="tab">
+                <i class="bi bi-palette me-2"></i>
+                界面配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#cache-config" data-bs-toggle="tab">
+                <i class="bi bi-lightning-charge me-2"></i>
+                缓存配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#performance-config" data-bs-toggle="tab">
+                <i class="bi bi-graph-up me-2"></i>
+                性能配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#feedback-config" data-bs-toggle="tab">
+                <i class="bi bi-chat-left-text me-2"></i>
+                用户反馈配置
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#config-history" data-bs-toggle="tab">
+                <i class="bi bi-clock-history me-2"></i>
+                配置历史
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#import-export" data-bs-toggle="tab">
+                <i class="bi bi-arrow-left-right me-2"></i>
+                导入/导出
+              </a>
+            </li>
+          </ul>
+          
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>管理员信息</span>
+          </h6>
+          <ul class="nav flex-column mb-2">
+            <li class="nav-item px-3 py-2">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-person-circle me-2"></i>
+                <span class="text-truncate"><%= user %></span>
+              </div>
+            </li>
+            <li class="nav-item px-3 py-2">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-calendar-check me-2"></i>
+                <span class="text-truncate">登录时间: <%= new Date(loginTime).toLocaleString('zh-CN') %></span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <!-- 页面内容通过Tab面板实现 -->
+        <div class="tab-content" id="myTabContent">
+          <!-- 各个Tab内容将在此处显示 -->
+          <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+            <!-- 控制面板内容 -->
+            <h2 class="mb-4">控制面板</h2>
+            <div class="row g-4">
+              <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">系统状态</h5>
+                    <p class="card-text">ContentAI 系统运行正常</p>
+                    <div class="d-grid">
+                      <button class="btn btn-sm btn-outline-primary" id="refreshStatus">
+                        <i class="bi bi-arrow-clockwise me-2"></i>刷新状态
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">配置管理</h5>
+                    <p class="card-text">通过左侧菜单访问不同配置项</p>
+                    <div class="d-grid">
+                      <button class="btn btn-sm btn-outline-primary" id="resetAllConfigs">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>重置所有配置
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">返回应用</h5>
+                    <p class="card-text">查看前端用户界面</p>
+                    <div class="d-grid">
+                      <a href="/" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-box-arrow-up-right me-2"></i>访问首页
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 其他Tab内容将在另一个文件中添加 -->
+         </div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- 常用脚本文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  
+  <!-- 初始化脚本和事件处理 -->
+  <script>
+    $(document).ready(function() {
+      // 处理导航切换
+      $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        // 更新active状态
+        $(e.target).addClass('active');
+        $(e.relatedTarget).removeClass('active');
+      });
+      
+      // 加载其他配置页面内容
+      function loadTabContent(tabId) {
+        const $tabPane = $('#' + tabId);
+        
+        // 如果内容已加载，则不重复加载
+        if ($tabPane.data('loaded')) {
+          return;
+        }
+        
+        // 显示加载中状态
+        $tabPane.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">加载内容中...</p></div>');
+        
+        // 创建标签页的基本布局
+        const title = getTabTitle(tabId);
+
+        // 配置历史和导入导出页面有特殊布局，需要单独处理
+        if (tabId === 'config-history') {
+          loadConfigHistoryTab($tabPane, title);
+          return;
+        } else if (tabId === 'import-export') {
+          loadImportExportTab($tabPane, title);
+          return;
+        }
+        
+        // 常规配置页面的模板
+        const template = `
+          <div class="container py-4">
+            <h2 class="mb-4">${title}</h2>
+            <div class="card mb-4">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">配置项</h5>
+                <div>
+                  <button type="button" class="btn btn-sm btn-primary save-config">
+                    <i class="bi bi-save me-1"></i> 保存设置
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary ms-2 reset-config">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> 重置为默认值
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <form class="config-form" id="${tabId}-form">
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> 
+                    加载配置中...请稍后
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        $tabPane.html(template);
+        $tabPane.data('loaded', true);
+        
+        // 获取配置数据
+        $.ajax({
+          url: '/admin/config',
+          method: 'GET',
+          success: function(response) {
+            if (response.success && response.data) {
+              try {
+                console.log('获取配置成功:', response);
+                // 根据标签页ID选择不同的配置部分
+                const configKey = tabId.split('-')[0];
+                const configData = response.data[configKey];
+                
+                if (!configData) {
+                  throw new Error(`找不到配置数据: ${configKey}`);
+                }
+                
+                // 根据不同的标签页渲染不同的配置表单
+                renderConfigForm(tabId, configKey, configData);
+              } catch (error) {
+                console.error('处理配置数据时出错:', error);
+                $('#' + tabId + '-form').html(`
+                  <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i> 
+                    加载配置失败: ${error.message}
+                  </div>
+                `);
+              }
+            } else {
+              $('#' + tabId + '-form').html(`
+                <div class="alert alert-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i> 
+                  无法获取配置数据
+                </div>
+              `);
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error('获取配置失败:', status, error);
+            $('#' + tabId + '-form').html(`
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i> 
+                获取配置失败: ${error || '未知错误'}
+              </div>
+            `);
+          }
+        });
+      }
+      
+      // 加载配置历史选项卡
+      function loadConfigHistoryTab($tabPane, title) {
+        const template = `
+          <div class="container py-4">
+            <h2 class="mb-4">${title}</h2>
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">配置修改历史</h5>
+              </div>
+              <div class="card-body">
+                <div id="config-history-content">
+                  <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">加载历史记录中...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        $tabPane.html(template);
+        $tabPane.data('loaded', true);
+        
+        // 获取配置历史记录
+        $.ajax({
+          url: '/admin/config/history/data',
+          method: 'GET',
+          success: function(response) {
+            if (response.success && response.data) {
+              try {
+                renderConfigHistory(response.data);
+              } catch (error) {
+                console.error('处理配置历史数据时出错:', error);
+                $('#config-history-content').html(`
+                  <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i> 
+                    加载历史记录失败: ${error.message}
+                  </div>
+                `);
+              }
+            } else {
+              $('#config-history-content').html(`
+                <div class="alert alert-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i> 
+                  无法获取历史记录数据
+                </div>
+              `);
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error('获取历史记录失败:', status, error);
+            $('#config-history-content').html(`
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i> 
+                获取历史记录失败: ${error || '未知错误'}
+              </div>
+            `);
+          }
+        });
+      }
+      
+      // 渲染配置历史记录
+      function renderConfigHistory(historyData) {
+        if (!historyData || historyData.length === 0) {
+          $('#config-history-content').html(`
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i> 
+              暂无配置历史记录
+            </div>
+          `);
+          return;
+        }
+        
+        let historyHtml = `
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>用户</th>
+                  <th>操作</th>
+                  <th>详情</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        
+        historyData.forEach(item => {
+          const date = new Date(item.timestamp);
+          const formattedDate = date.toLocaleString('zh-CN');
+          
+          historyHtml += `
+            <tr>
+              <td>${formattedDate}</td>
+              <td>${item.user || '未知用户'}</td>
+              <td>
+                <span class="badge ${getBadgeClass(item.action)}">${getActionName(item.action)}</span>
+              </td>
+              <td>
+                <span class="text-truncate d-inline-block" style="max-width: 300px;">${item.details || '-'}</span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary rollback-config" data-id="${item.id}">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>回滚
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+        
+        historyHtml += `
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        $('#config-history-content').html(historyHtml);
+        
+        // 绑定回滚按钮事件
+        $('.rollback-config').on('click', function() {
+          const id = $(this).data('id');
+          if (confirm('确定要回滚到此配置吗？当前配置将会被覆盖。')) {
+            rollbackConfig(id);
+          }
+        });
+      }
+      
+      // 加载导入导出选项卡
+      function loadImportExportTab($tabPane, title) {
+        const template = `
+          <div class="container py-4">
+            <h2 class="mb-4">${title}</h2>
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">导出配置</h5>
+                  </div>
+                  <div class="card-body">
+                    <p>下载当前应用配置为JSON文件</p>
+                    <div class="d-grid">
+                      <a href="/admin/config/export" class="btn btn-primary">
+                        <i class="bi bi-download me-2"></i>导出配置
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                  <div class="card-header">
+                    <h5 class="mb-0">导入配置</h5>
+                  </div>
+                  <div class="card-body">
+                    <p>从JSON文件导入配置</p>
+                    <form id="import-config-form">
+                      <div class="mb-3">
+                        <input class="form-control" type="file" id="configFile" accept=".json">
+                      </div>
+                      <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                          <i class="bi bi-upload me-2"></i>导入配置
+                        </button>
+                      </div>
+                    </form>
+                    <div id="import-result" class="mt-3"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        $tabPane.html(template);
+        $tabPane.data('loaded', true);
+        
+        // 绑定导入表单提交事件
+        $('#import-config-form').on('submit', function(e) {
+          e.preventDefault();
+          
+          const fileInput = document.getElementById('configFile');
+          if (!fileInput.files || fileInput.files.length === 0) {
+            $('#import-result').html(`
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                请选择配置文件
+              </div>
+            `);
+            return;
+          }
+          
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            try {
+              const config = JSON.parse(e.target.result);
+              importConfig(config);
+            } catch (error) {
+              $('#import-result').html(`
+                <div class="alert alert-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  解析配置文件失败: ${error.message}
+                </div>
+              `);
+            }
+          };
+          
+          reader.readAsText(file);
+        });
+      }
+      
+      // 导入配置
+      function importConfig(config) {
+        $.ajax({
+          url: '/admin/config/import',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(config),
+          success: function(response) {
+            if (response.success) {
+              $('#import-result').html(`
+                <div class="alert alert-success">
+                  <i class="bi bi-check-circle me-2"></i>
+                  配置导入成功
+                </div>
+              `);
+              
+              // 3秒后刷新页面
+              setTimeout(function() {
+                window.location.reload();
+              }, 3000);
+            } else {
+              $('#import-result').html(`
+                <div class="alert alert-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  配置导入失败: ${response.message || '未知错误'}
+                </div>
+              `);
+            }
+          },
+          error: function(xhr, status, error) {
+            $('#import-result').html(`
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                配置导入失败: ${xhr.responseJSON?.message || error || '未知错误'}
+              </div>
+            `);
+          }
+        });
+      }
+      
+      // 回滚配置
+      function rollbackConfig(id) {
+        $.ajax({
+          url: `/admin/config/rollback/${id}`,
+          method: 'POST',
+          success: function(response) {
+            if (response.success) {
+              alert('配置已成功回滚');
+              window.location.reload();
+            } else {
+              alert(`回滚配置失败: ${response.message || '未知错误'}`);
+            }
+          },
+          error: function(xhr, status, error) {
+            alert(`回滚配置失败: ${xhr.responseJSON?.message || error || '未知错误'}`);
+          }
+        });
+      }
+      
+      // 获取操作名称
+      function getActionName(action) {
+        const actionMap = {
+          'update': '更新',
+          'reset': '重置',
+          'import': '导入',
+          'rollback': '回滚'
+        };
+        
+        return actionMap[action] || action;
+      }
+      
+      // 获取对应的Bootstrap徽章类
+      function getBadgeClass(action) {
+        const classMap = {
+          'update': 'bg-primary',
+          'reset': 'bg-warning',
+          'import': 'bg-info',
+          'rollback': 'bg-secondary'
+        };
+        
+        return classMap[action] || 'bg-secondary';
+      }
+      
+      // 渲染配置表单
+      function renderConfigForm(tabId, configKey, configData) {
+        const $form = $('#' + tabId + '-form');
+        let formHtml = '';
+        
+        // 根据不同的配置类型创建表单元素
+        switch(configKey) {
+          case 'api':
+            formHtml = renderApiConfigForm(configData);
+            break;
+          case 'search':
+            formHtml = renderSearchConfigForm(configData);
+            break;
+          case 'ui':
+            formHtml = renderUiConfigForm(configData);
+            break;
+          case 'cache':
+            formHtml = renderCacheConfigForm(configData);
+            break;
+          case 'performance':
+            formHtml = renderPerformanceConfigForm(configData);
+            break;
+          case 'feedback':
+            formHtml = renderFeedbackConfigForm(configData);
+            break;
+          default:
+            formHtml = `<div class="alert alert-warning">未知的配置类型: ${configKey}</div>`;
+        }
+        
+        $form.html(formHtml);
+        
+        // 绑定表单提交事件
+        $form.on('submit', function(e) {
+          e.preventDefault();
+          saveConfigForm(tabId, configKey);
+        });
+        
+        // 绑定保存按钮事件
+        $form.closest('.card').find('.save-config').on('click', function() {
+          $form.submit();
+        });
+        
+        // 绑定重置按钮事件
+        $form.closest('.card').find('.reset-config').on('click', function() {
+          if (confirm('确定要将此配置重置为默认值吗？')) {
+            resetConfigForm(tabId, configKey);
+          }
+        });
+      }
+      
+      // API配置表单
+      function renderApiConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="api-baseUrl" class="form-label">API 基础地址</label>
+              <input type="text" class="form-control" id="api-baseUrl" name="api.baseUrl" value="${configData.baseUrl || ''}" required>
+              <div class="form-text">API服务的基础URL地址</div>
+            </div>
+            <div class="col-md-6">
+              <label for="api-timeout" class="form-label">请求超时(毫秒)</label>
+              <input type="number" class="form-control" id="api-timeout" name="api.timeout" value="${configData.timeout || 5000}" min="1000" max="60000" required>
+              <div class="form-text">API请求超时时间，单位毫秒</div>
+            </div>
+            <div class="col-md-6">
+              <label for="api-maxRetries" class="form-label">最大重试次数</label>
+              <input type="number" class="form-control" id="api-maxRetries" name="api.maxRetries" value="${configData.maxRetries || 3}" min="0" max="10" required>
+              <div class="form-text">请求失败时的最大重试次数</div>
+            </div>
+            <div class="col-md-6">
+              <label for="api-requestRateLimit" class="form-label">请求速率限制</label>
+              <input type="number" class="form-control" id="api-requestRateLimit" name="api.requestRateLimit" value="${configData.requestRateLimit || 100}" min="10" max="500" required>
+              <div class="form-text">每分钟最大请求数</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 搜索配置表单
+      function renderSearchConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="search-defaultPageSize" class="form-label">默认每页结果数</label>
+              <input type="number" class="form-control" id="search-defaultPageSize" name="search.defaultPageSize" value="${configData.defaultPageSize || 10}" min="5" max="100" required>
+              <div class="form-text">搜索结果的默认分页大小</div>
+            </div>
+            <div class="col-md-6">
+              <label for="search-maxKeywordLength" class="form-label">最大关键词长度</label>
+              <input type="number" class="form-control" id="search-maxKeywordLength" name="search.maxKeywordLength" value="${configData.maxKeywordLength || 100}" min="10" max="500" required>
+              <div class="form-text">允许的最大搜索关键词长度</div>
+            </div>
+            <div class="col-md-6">
+              <label for="search-defaultSort" class="form-label">默认排序方式</label>
+              <select class="form-select" id="search-defaultSort" name="search.defaultSort" required>
+                <option value="created,desc" ${configData.defaultSort === 'created,desc' ? 'selected' : ''}>最新优先</option>
+                <option value="created,asc" ${configData.defaultSort === 'created,asc' ? 'selected' : ''}>最早优先</option>
+                <option value="relevance,desc" ${configData.defaultSort === 'relevance,desc' ? 'selected' : ''}>相关性优先</option>
+              </select>
+              <div class="form-text">搜索结果的默认排序方式</div>
+            </div>
+            <div class="col-md-6">
+              <label for="search-truncateContentLength" class="form-label">内容截断长度</label>
+              <input type="number" class="form-control" id="search-truncateContentLength" name="search.truncateContentLength" value="${configData.truncateContentLength || 500}" min="100" max="2000" required>
+              <div class="form-text">搜索结果显示的内容最大长度</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="search-highlightResults" name="search.highlightResults" ${configData.highlightResults ? 'checked' : ''}>
+                <label class="form-check-label" for="search-highlightResults">高亮搜索结果中的关键词</label>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 界面配置表单
+      function renderUiConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="ui-theme" class="form-label">主题</label>
+              <select class="form-select" id="ui-theme" name="ui.theme" required>
+                <option value="light" ${configData.theme === 'light' ? 'selected' : ''}>亮色</option>
+                <option value="dark" ${configData.theme === 'dark' ? 'selected' : ''}>暗色</option>
+                <option value="auto" ${configData.theme === 'auto' ? 'selected' : ''}>跟随系统</option>
+              </select>
+              <div class="form-text">应用的显示主题</div>
+            </div>
+            <div class="col-md-6">
+              <label for="ui-fontSize" class="form-label">字体大小</label>
+              <select class="form-select" id="ui-fontSize" name="ui.fontSize" required>
+                <option value="small" ${configData.fontSize === 'small' ? 'selected' : ''}>小</option>
+                <option value="medium" ${configData.fontSize === 'medium' ? 'selected' : ''}>中</option>
+                <option value="large" ${configData.fontSize === 'large' ? 'selected' : ''}>大</option>
+              </select>
+              <div class="form-text">应用的字体大小</div>
+            </div>
+            <div class="col-md-6">
+              <label for="ui-contentDisplayMode" class="form-label">内容显示模式</label>
+              <select class="form-select" id="ui-contentDisplayMode" name="ui.contentDisplayMode" required>
+                <option value="card" ${configData.contentDisplayMode === 'card' ? 'selected' : ''}>卡片视图</option>
+                <option value="list" ${configData.contentDisplayMode === 'list' ? 'selected' : ''}>列表视图</option>
+                <option value="table" ${configData.contentDisplayMode === 'table' ? 'selected' : ''}>表格视图</option>
+              </select>
+              <div class="form-text">搜索结果的显示模式</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="ui-animationsEnabled" name="ui.animationsEnabled" ${configData.animationsEnabled ? 'checked' : ''}>
+                <label class="form-check-label" for="ui-animationsEnabled">启用界面动画</label>
+              </div>
+              <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" id="ui-showTimestamps" name="ui.showTimestamps" ${configData.showTimestamps ? 'checked' : ''}>
+                <label class="form-check-label" for="ui-showTimestamps">显示时间戳</label>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 缓存配置表单
+      function renderCacheConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="cache-enabled" name="cache.enabled" ${configData.enabled ? 'checked' : ''}>
+                <label class="form-check-label" for="cache-enabled">启用缓存</label>
+              </div>
+              <div class="form-text">是否启用搜索结果缓存</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cache-expiry" class="form-label">缓存过期时间(秒)</label>
+              <input type="number" class="form-control" id="cache-expiry" name="cache.expiry" value="${configData.expiry || 3600}" min="60" max="86400" required>
+              <div class="form-text">缓存的过期时间，单位秒</div>
+            </div>
+            <div class="col-md-6">
+              <label for="cache-maxItems" class="form-label">最大缓存项目数</label>
+              <input type="number" class="form-control" id="cache-maxItems" name="cache.maxItems" value="${configData.maxItems || 100}" min="10" max="1000" required>
+              <div class="form-text">内存中保存的最大缓存项目数</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 性能配置表单
+      function renderPerformanceConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="performance-maxConcurrentRequests" class="form-label">最大并发请求数</label>
+              <input type="number" class="form-control" id="performance-maxConcurrentRequests" name="performance.maxConcurrentRequests" value="${configData.maxConcurrentRequests || 5}" min="1" max="20" required>
+              <div class="form-text">允许的最大并发API请求数</div>
+            </div>
+            <div class="col-md-6">
+              <label for="performance-requestTimeout" class="form-label">请求超时(毫秒)</label>
+              <input type="number" class="form-control" id="performance-requestTimeout" name="performance.requestTimeout" value="${configData.requestTimeout || 10000}" min="1000" max="60000" required>
+              <div class="form-text">全局请求超时设置，单位毫秒</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" id="performance-logPerformanceMetrics" name="performance.logPerformanceMetrics" ${configData.logPerformanceMetrics ? 'checked' : ''}>
+                <label class="form-check-label" for="performance-logPerformanceMetrics">记录性能指标</label>
+              </div>
+              <div class="form-text">是否记录API请求的性能指标</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 用户反馈配置表单
+      function renderFeedbackConfigForm(configData) {
+        return `
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="feedback-enabled" name="feedback.enabled" ${configData.enabled ? 'checked' : ''}>
+                <label class="form-check-label" for="feedback-enabled">启用用户反馈</label>
+              </div>
+              <div class="form-text">是否允许用户提交反馈</div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="feedback-collectAnonymousData" name="feedback.collectAnonymousData" ${configData.collectAnonymousData ? 'checked' : ''}>
+                <label class="form-check-label" for="feedback-collectAnonymousData">收集匿名使用数据</label>
+              </div>
+              <div class="form-text">是否收集匿名使用统计数据</div>
+            </div>
+            <div class="col-md-12">
+              <label for="feedback-feedbackFormUrl" class="form-label">反馈表单URL</label>
+              <input type="url" class="form-control" id="feedback-feedbackFormUrl" name="feedback.feedbackFormUrl" value="${configData.feedbackFormUrl || ''}">
+              <div class="form-text">外部反馈表单的URL地址(可选)</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 保存配置表单
+      function saveConfigForm(tabId, configKey) {
+        const $form = $('#' + tabId + '-form');
+        const formData = {};
+        
+        // 收集表单数据
+        $form.serializeArray().forEach(function(item) {
+          formData[item.name] = item.value;
+        });
+        
+        // 处理复选框
+        $form.find('input[type="checkbox"]').each(function() {
+          const name = $(this).attr('name');
+          formData[name] = $(this).is(':checked');
+        });
+        
+        // 显示保存中状态
+        const $saveBtn = $form.closest('.card').find('.save-config');
+        const originalText = $saveBtn.html();
+        $saveBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>保存中...');
+        
+        // 发送保存请求
+        const updatePromises = [];
+        
+        Object.keys(formData).forEach(function(key) {
+          updatePromises.push(
+            $.ajax({
+              url: '/admin/config',
+              method: 'POST',
+              data: {
+                key: key,
+                value: formData[key]
+              }
+            })
+          );
+        });
+        
+        Promise.all(updatePromises)
+          .then(function(results) {
+            // 恢复按钮状态
+            $saveBtn.prop('disabled', false).html(originalText);
+            
+            // 显示成功消息
+            $form.prepend(`
+              <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i> 配置已成功保存
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            `);
+            
+            // 3秒后自动关闭提示
+            setTimeout(function() {
+              $form.find('.alert').alert('close');
+            }, 3000);
+          })
+          .catch(function(error) {
+            // 恢复按钮状态
+            $saveBtn.prop('disabled', false).html(originalText);
+            
+            // 显示错误消息
+            $form.prepend(`
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i> 保存配置失败: ${error.responseJSON?.message || '未知错误'}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            `);
+          });
+      }
+      
+      // 重置配置表单
+      function resetConfigForm(tabId, configKey) {
+        const $form = $('#' + tabId + '-form');
+        
+        // 显示重置中状态
+        const $resetBtn = $form.closest('.card').find('.reset-config');
+        const originalText = $resetBtn.html();
+        $resetBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>重置中...');
+        
+        // 发送重置特定配置部分的请求
+        $.ajax({
+          url: '/admin/config/reset',
+          method: 'POST',
+          data: {
+            section: configKey
+          },
+          success: function(response) {
+            // 恢复按钮状态
+            $resetBtn.prop('disabled', false).html(originalText);
+            
+            if (response.success) {
+              // 显示成功消息
+              $form.prepend(`
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <i class="bi bi-check-circle me-2"></i> 配置已重置为默认值
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              `);
+              
+              // 重新加载表单
+              loadTabContent(tabId);
+            } else {
+              // 显示错误消息
+              $form.prepend(`
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <i class="bi bi-exclamation-triangle me-2"></i> 重置配置失败: ${response.message || '未知错误'}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              `);
+            }
+          },
+          error: function(xhr) {
+            // 恢复按钮状态
+            $resetBtn.prop('disabled', false).html(originalText);
+            
+            // 显示错误消息
+            $form.prepend(`
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i> 重置配置失败: ${xhr.responseJSON?.message || '未知错误'}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            `);
+          }
+        });
+      }
+      
+      // 获取标签页标题
+      function getTabTitle(tabId) {
+        const titleMap = {
+          'api-config': '<i class="bi bi-cloud me-2"></i>API 配置',
+          'search-config': '<i class="bi bi-search me-2"></i>搜索配置',
+          'ui-config': '<i class="bi bi-palette me-2"></i>界面配置',
+          'cache-config': '<i class="bi bi-lightning-charge me-2"></i>缓存配置',
+          'performance-config': '<i class="bi bi-graph-up me-2"></i>性能配置',
+          'feedback-config': '<i class="bi bi-chat-left-text me-2"></i>用户反馈配置',
+          'config-history': '<i class="bi bi-clock-history me-2"></i>配置历史',
+          'import-export': '<i class="bi bi-arrow-left-right me-2"></i>导入/导出'
+        };
+        
+        return titleMap[tabId] || tabId;
+      }
+      
+      // 为每个Tab注册点击事件
+      $('a[data-bs-toggle="tab"]').on('click', function(e) {
+        const tabId = $(this).attr('href').substring(1); // 移除#前缀
+        
+        // 避免重复加载dashboard，因为它是直接包含在此页面中的
+        if (tabId !== 'dashboard') {
+          loadTabContent(tabId);
+        }
+      });
+      
+      // 系统状态刷新
+      $('#refreshStatus').on('click', function() {
+        // 显示加载中状态
+        const $button = $(this);
+        const originalText = $button.html();
+        $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>刷新中...');
+        
+        // 发送请求
+        $.get('/health', function(data) {
+          // 重置按钮
+          $button.prop('disabled', false).html(originalText);
+          
+          // 显示成功消息
+          alert('系统状态已更新：' + data.status);
+        }).fail(function() {
+          // 重置按钮并显示错误
+          $button.prop('disabled', false).html(originalText);
+          alert('无法获取系统状态');
+        });
+      });
+      
+      // 重置所有配置
+      $('#resetAllConfigs').on('click', function() {
+        if (confirm('确定要将所有配置重置为默认值吗？此操作不可撤销。')) {
+          const $button = $(this);
+          const originalText = $button.html();
+          $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>重置中...');
+          
+          $.post('/admin/config/reset', function(response) {
+            $button.prop('disabled', false).html(originalText);
+            if (response.success) {
+              alert('所有配置已重置为默认值');
+              window.location.reload();
+            } else {
+              alert('重置失败: ' + response.message);
+            }
+          }).fail(function() {
+            $button.prop('disabled', false).html(originalText);
+            alert('操作失败，请稍后重试');
+          });
+        }
+      });
+      
+      // 初始化：创建缺少的tab面板
+      const tabIds = ['api-config', 'search-config', 'ui-config', 'cache-config', 
+                      'performance-config', 'feedback-config', 'config-history', 'import-export'];
+      
+      tabIds.forEach(function(tabId) {
+        // 检查是否已经存在
+        if ($('#' + tabId).length === 0) {
+          $('#myTabContent').append(`<div class="tab-pane fade" id="${tabId}" role="tabpanel"></div>`);
+        }
+      });
+      
+      // 通过URL参数或hash值自动打开对应的标签页
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      const hash = window.location.hash.replace('#', '');
+      
+      if (tabParam) {
+        $(`a[href="#${tabParam}"]`).tab('show');
+        loadTabContent(tabParam);
+      } else if (hash) {
+        $(`a[href="#${hash}"]`).tab('show');
+        if (hash !== 'dashboard') {
+          loadTabContent(hash);
+        }
+      }
+    });
+  </script>
+</body>
+</html> 

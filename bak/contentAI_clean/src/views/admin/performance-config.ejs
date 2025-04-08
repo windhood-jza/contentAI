@@ -1,0 +1,337 @@
+<!-- 性能配置页面 -->
+<div class="tab-pane fade" id="performance-config" role="tabpanel" aria-labelledby="performance-config-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-graph-up"></i> 性能配置</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 此页面用于配置系统性能相关参数，合理的设置可以优化应用响应速度和资源利用率。
+    </div>
+    
+    <div class="mb-4">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">性能监控</h5>
+          <button class="btn btn-sm btn-outline-primary" id="refresh-performance-metrics">
+            <i class="bi bi-arrow-clockwise"></i> 刷新指标
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="text-center mb-3">
+                <h6>平均响应时间</h6>
+                <div class="fs-4" id="avg-response-time">
+                  <span class="badge bg-primary">0 ms</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center mb-3">
+                <h6>请求成功率</h6>
+                <div class="fs-4" id="success-rate">
+                  <span class="badge bg-success">0%</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center mb-3">
+                <h6>当前并发请求</h6>
+                <div class="fs-4" id="concurrent-requests">
+                  <span class="badge bg-primary">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center mb-3">
+                <h6>内存使用率</h6>
+                <div class="fs-4" id="memory-usage">
+                  <span class="badge bg-info">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12">
+              <canvas id="performance-chart" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <form id="performance-config-form" class="config-form needs-validation" novalidate>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">请求处理配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="maxConcurrentRequests" class="form-label">最大并发请求数</label>
+                <input type="number" class="form-control" id="maxConcurrentRequests" name="maxConcurrentRequests" min="1" max="100" value="<%= config.performance.maxConcurrentRequests %>" required>
+                <div class="form-text">系统同时处理的最大请求数</div>
+                <div class="invalid-feedback">请输入1-100之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="requestTimeout" class="form-label">请求超时时间（毫秒）</label>
+                <input type="number" class="form-control" id="requestTimeout" name="requestTimeout" min="1000" max="60000" value="<%= config.performance.requestTimeout %>" required>
+                <div class="form-text">请求的最大等待时间</div>
+                <div class="invalid-feedback">请输入1000-60000之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="connectionPoolSize" class="form-label">连接池大小</label>
+                <input type="number" class="form-control" id="connectionPoolSize" name="connectionPoolSize" min="5" max="200" value="<%= config.performance.connectionPoolSize || 10 %>" required>
+                <div class="form-text">HTTP客户端连接池的大小</div>
+                <div class="invalid-feedback">请输入5-200之间的有效数字</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">资源优化配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="maxMemoryUsage" class="form-label">最大内存使用率（%）</label>
+                <input type="number" class="form-control" id="maxMemoryUsage" name="maxMemoryUsage" min="50" max="95" value="<%= config.performance.maxMemoryUsage || 80 %>" required>
+                <div class="form-text">系统可使用的最大内存百分比，超过此值将触发垃圾回收</div>
+                <div class="invalid-feedback">请输入50-95之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="gcInterval" class="form-label">垃圾回收间隔（分钟）</label>
+                <input type="number" class="form-control" id="gcInterval" name="gcInterval" min="5" max="120" value="<%= config.performance.gcInterval || 30 %>" required>
+                <div class="form-text">主动执行垃圾回收的时间间隔</div>
+                <div class="invalid-feedback">请输入5-120之间的有效数字</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableCompression" name="enableCompression" <%= config.performance.enableCompression ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableCompression">启用HTTP压缩</label>
+                <div class="form-text">压缩HTTP响应以减少传输数据量，提高加载速度</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">监控与日志配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="logPerformanceMetrics" name="logPerformanceMetrics" <%= config.performance.logPerformanceMetrics ? 'checked' : '' %>>
+                <label class="form-check-label" for="logPerformanceMetrics">记录性能指标</label>
+                <div class="form-text">将性能指标数据记录到日志文件中</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="metricsLogLevel" class="form-label">指标日志级别</label>
+                <select class="form-select" id="metricsLogLevel" name="metricsLogLevel">
+                  <option value="error" <%= (!config.performance.metricsLogLevel || config.performance.metricsLogLevel === 'error') ? 'selected' : '' %>>错误</option>
+                  <option value="warn" <%= config.performance.metricsLogLevel === 'warn' ? 'selected' : '' %>>警告</option>
+                  <option value="info" <%= config.performance.metricsLogLevel === 'info' ? 'selected' : '' %>>信息</option>
+                  <option value="debug" <%= config.performance.metricsLogLevel === 'debug' ? 'selected' : '' %>>调试</option>
+                </select>
+                <div class="form-text">性能指标的日志记录级别</div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="slowQueryThreshold" class="form-label">慢查询阈值（毫秒）</label>
+                  <input type="number" class="form-control" id="slowQueryThreshold" name="slowQueryThreshold" min="500" max="10000" value="<%= config.performance.slowQueryThreshold || 2000 %>" required>
+                  <div class="form-text">超过此时间的查询将被记录为慢查询</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="logRetentionDays" class="form-label">日志保留天数</label>
+                  <input type="number" class="form-control" id="logRetentionDays" name="logRetentionDays" min="1" max="90" value="<%= config.performance.logRetentionDays || 30 %>" required>
+                  <div class="form-text">性能日志的保存天数</div>
+                </div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableRealTimeMonitoring" name="enableRealTimeMonitoring" <%= config.performance.enableRealTimeMonitoring ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableRealTimeMonitoring">启用实时监控</label>
+                <div class="form-text">实时监控系统性能指标，可能会对系统性能有轻微影响</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="reset-performance-config">
+          <i class="bi bi-arrow-counterclockwise"></i> 重置为默认
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> 保存配置
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 刷新性能指标
+      function refreshPerformanceMetrics() {
+        fetch('/admin/performance/metrics')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              document.getElementById('avg-response-time').innerHTML = `<span class="badge bg-primary">${data.metrics.avgResponseTime} ms</span>`;
+              document.getElementById('success-rate').innerHTML = `<span class="badge bg-success">${data.metrics.successRate}%</span>`;
+              document.getElementById('concurrent-requests').innerHTML = `<span class="badge bg-primary">${data.metrics.concurrentRequests}</span>`;
+              document.getElementById('memory-usage').innerHTML = `<span class="badge bg-info">${data.metrics.memoryUsage}%</span>`;
+              
+              // 更新图表
+              if (window.performanceChart) {
+                window.performanceChart.data.labels = data.metrics.timeLabels;
+                window.performanceChart.data.datasets[0].data = data.metrics.responseTimeData;
+                window.performanceChart.data.datasets[1].data = data.metrics.memoryUsageData;
+                window.performanceChart.update();
+              } else {
+                // 初始化图表
+                const ctx = document.getElementById('performance-chart').getContext('2d');
+                window.performanceChart = new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: data.metrics.timeLabels,
+                    datasets: [
+                      {
+                        label: '响应时间 (ms)',
+                        data: data.metrics.responseTimeData,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.2
+                      },
+                      {
+                        label: '内存使用率 (%)',
+                        data: data.metrics.memoryUsageData,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.2
+                      }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    scales: {
+                      y: {
+                        beginAtZero: true
+                      }
+                    }
+                  }
+                });
+              }
+            } else {
+              showMessage('获取性能指标失败', 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('获取性能指标时出错:', error);
+            showMessage('获取性能指标时发生错误', 'danger');
+          });
+      }
+      
+      // 初始化时加载性能指标
+      refreshPerformanceMetrics();
+      
+      // 刷新按钮点击
+      document.getElementById('refresh-performance-metrics').addEventListener('click', function() {
+        refreshPerformanceMetrics();
+        showMessage('性能指标已刷新', 'success');
+      });
+      
+      // 表单提交
+      const performanceConfigForm = document.getElementById('performance-config-form');
+      performanceConfigForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (!performanceConfigForm.checkValidity()) {
+          event.stopPropagation();
+          performanceConfigForm.classList.add('was-validated');
+          return;
+        }
+        
+        // 收集表单数据
+        const formData = new FormData(performanceConfigForm);
+        const performanceConfig = {
+          maxConcurrentRequests: parseInt(formData.get('maxConcurrentRequests')),
+          requestTimeout: parseInt(formData.get('requestTimeout')),
+          connectionPoolSize: parseInt(formData.get('connectionPoolSize')),
+          maxMemoryUsage: parseInt(formData.get('maxMemoryUsage')),
+          gcInterval: parseInt(formData.get('gcInterval')),
+          enableCompression: formData.get('enableCompression') === 'on',
+          logPerformanceMetrics: formData.get('logPerformanceMetrics') === 'on',
+          metricsLogLevel: formData.get('metricsLogLevel'),
+          slowQueryThreshold: parseInt(formData.get('slowQueryThreshold')),
+          logRetentionDays: parseInt(formData.get('logRetentionDays')),
+          enableRealTimeMonitoring: formData.get('enableRealTimeMonitoring') === 'on'
+        };
+        
+        // 发送配置到服务器
+        fetch('/admin/config/performance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(performanceConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('性能配置已成功保存', 'success');
+          } else {
+            showMessage('保存性能配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('保存性能配置时出错:', error);
+          showMessage('保存性能配置时发生错误', 'danger');
+        });
+      });
+      
+      // 重置配置按钮
+      document.getElementById('reset-performance-config').addEventListener('click', function() {
+        if (confirm('确定要重置所有性能配置为默认值吗？此操作不可撤销。')) {
+          fetch('/admin/config/performance/reset', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('性能配置已重置为默认值', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showMessage('重置性能配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('重置性能配置时出错:', error);
+            showMessage('重置性能配置时发生错误', 'danger');
+          });
+        }
+      });
+      
+      // 如果有引入Chart.js库，则设置自动刷新
+      if (typeof Chart !== 'undefined' && config.performance.enableRealTimeMonitoring) {
+        // 每30秒自动刷新一次性能指标
+        setInterval(refreshPerformanceMetrics, 30000);
+      }
+    });
+  </script>
+</div> 

@@ -1,0 +1,232 @@
+<!-- API配置页面 -->
+<div class="tab-pane fade" id="api-config" role="tabpanel" aria-labelledby="api-config-tab">
+  <div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-cloud"></i> API 配置</h2>
+    
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> 此页面用于配置API相关参数，修改这些配置可能会影响系统的稳定性和响应速度，请谨慎操作。
+    </div>
+    
+    <form id="api-config-form" class="config-form needs-validation" novalidate>
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">基本配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="apiBaseUrl" class="form-label">API 基础 URL</label>
+                <input type="url" class="form-control" id="apiBaseUrl" name="apiBaseUrl" value="<%= config.api.baseUrl %>" required>
+                <div class="form-text">外部API服务的基础URL，格式如: https://example.com/api</div>
+                <div class="invalid-feedback">请输入有效的URL</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="apiKey" class="form-label">API Key</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="apiKey" name="apiKey" value="<%= config.api.apiKey %>" required>
+                  <button class="btn btn-outline-secondary" type="button" id="toggleApiKey">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div class="form-text">访问API所需的密钥，请确保安全保存</div>
+                <div class="invalid-feedback">API Key不能为空</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="apiVersion" class="form-label">API 版本</label>
+                <input type="text" class="form-control" id="apiVersion" name="apiVersion" value="<%= config.api.version %>" required>
+                <div class="form-text">API版本号，例如: v1, v2, latest</div>
+                <div class="invalid-feedback">请输入API版本</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">请求配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="timeout" class="form-label">请求超时 (秒)</label>
+                <input type="number" class="form-control" id="timeout" name="timeout" min="1" max="120" value="<%= config.api.timeout %>" required>
+                <div class="form-text">API请求的最大等待时间，建议5-30秒</div>
+                <div class="invalid-feedback">请输入1-120之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="retries" class="form-label">请求重试次数</label>
+                <input type="number" class="form-control" id="retries" name="retries" min="0" max="10" value="<%= config.api.retries %>" required>
+                <div class="form-text">请求失败时的自动重试次数</div>
+                <div class="invalid-feedback">请输入0-10之间的有效数字</div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="rateLimit" class="form-label">请求频率限制 (每分钟)</label>
+                <input type="number" class="form-control" id="rateLimit" name="rateLimit" min="1" max="1000" value="<%= config.api.rateLimit %>" required>
+                <div class="form-text">每分钟最大请求次数，避免超出API提供商限制</div>
+                <div class="invalid-feedback">请输入1-1000之间的有效数字</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">高级配置</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="requestFormat" class="form-label">请求格式</label>
+                  <select class="form-select" id="requestFormat" name="requestFormat" required>
+                    <option value="json" <%= config.api.requestFormat === 'json' ? 'selected' : '' %>>JSON</option>
+                    <option value="form" <%= config.api.requestFormat === 'form' ? 'selected' : '' %>>Form Data</option>
+                    <option value="xml" <%= config.api.requestFormat === 'xml' ? 'selected' : '' %>>XML</option>
+                  </select>
+                  <div class="form-text">请求体的格式类型</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="responseFormat" class="form-label">响应格式</label>
+                  <select class="form-select" id="responseFormat" name="responseFormat" required>
+                    <option value="json" <%= config.api.responseFormat === 'json' ? 'selected' : '' %>>JSON</option>
+                    <option value="xml" <%= config.api.responseFormat === 'xml' ? 'selected' : '' %>>XML</option>
+                    <option value="text" <%= config.api.responseFormat === 'text' ? 'selected' : '' %>>Plain Text</option>
+                  </select>
+                  <div class="form-text">响应数据的格式类型</div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="customHeaders" class="form-label">自定义请求头</label>
+                <textarea class="form-control" id="customHeaders" name="customHeaders" rows="3"><%= JSON.stringify(config.api.headers, null, 2) %></textarea>
+                <div class="form-text">请以JSON格式输入自定义请求头，如: {"X-Custom-Header": "value"}</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableCompression" name="enableCompression" <%= config.api.enableCompression ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableCompression">启用压缩</label>
+                <div class="form-text">启用HTTP压缩以减少数据传输量，节省带宽</div>
+              </div>
+              
+              <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="enableMetrics" name="enableMetrics" <%= config.api.enableMetrics ? 'checked' : '' %>>
+                <label class="form-check-label" for="enableMetrics">启用指标收集</label>
+                <div class="form-text">记录API调用的性能指标，如响应时间、成功率等</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="reset-api-config">
+          <i class="bi bi-arrow-counterclockwise"></i> 重置为默认
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> 保存配置
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 显示/隐藏API密钥
+      document.getElementById('toggleApiKey').addEventListener('click', function() {
+        const apiKeyInput = document.getElementById('apiKey');
+        const eyeIcon = this.querySelector('i');
+        
+        if (apiKeyInput.type === 'password') {
+          apiKeyInput.type = 'text';
+          eyeIcon.classList.remove('bi-eye');
+          eyeIcon.classList.add('bi-eye-slash');
+        } else {
+          apiKeyInput.type = 'password';
+          eyeIcon.classList.remove('bi-eye-slash');
+          eyeIcon.classList.add('bi-eye');
+        }
+      });
+      
+      // 表单提交
+      const apiConfigForm = document.getElementById('api-config-form');
+      apiConfigForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (!apiConfigForm.checkValidity()) {
+          event.stopPropagation();
+          apiConfigForm.classList.add('was-validated');
+          return;
+        }
+        
+        // 收集表单数据
+        const formData = new FormData(apiConfigForm);
+        const apiConfig = {
+          baseUrl: formData.get('apiBaseUrl'),
+          apiKey: formData.get('apiKey'),
+          version: formData.get('apiVersion'),
+          timeout: parseInt(formData.get('timeout')),
+          retries: parseInt(formData.get('retries')),
+          rateLimit: parseInt(formData.get('rateLimit')),
+          requestFormat: formData.get('requestFormat'),
+          responseFormat: formData.get('responseFormat'),
+          headers: JSON.parse(formData.get('customHeaders')),
+          enableCompression: formData.get('enableCompression') === 'on',
+          enableMetrics: formData.get('enableMetrics') === 'on'
+        };
+        
+        // 发送配置到服务器
+        fetch('/admin/config/api', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(apiConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('API配置已成功保存', 'success');
+          } else {
+            showMessage('保存API配置失败: ' + data.error, 'danger');
+          }
+        })
+        .catch(error => {
+          console.error('保存API配置时出错:', error);
+          showMessage('保存API配置时发生错误', 'danger');
+        });
+      });
+      
+      // 重置配置按钮
+      document.getElementById('reset-api-config').addEventListener('click', function() {
+        if (confirm('确定要重置所有API配置为默认值吗？此操作不可撤销。')) {
+          fetch('/admin/config/api/reset', {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('API配置已重置为默认值', 'success');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } else {
+              showMessage('重置API配置失败: ' + data.error, 'danger');
+            }
+          })
+          .catch(error => {
+            console.error('重置API配置时出错:', error);
+            showMessage('重置API配置时发生错误', 'danger');
+          });
+        }
+      });
+    });
+  </script>
+</div> 
